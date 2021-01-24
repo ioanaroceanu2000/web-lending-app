@@ -1,0 +1,42 @@
+.deposit-value{
+  text-align: right;
+  font-size: 30px;
+  font-weight: 400;
+  color: #FF66C4;
+}
+
+.deposit-token{
+  text-align: right;
+  color: white;
+}
+
+.action-name{
+  font-size: 20px;
+  text-align: left;
+  padding: 5px 0;
+  color: white;
+}
+
+.loan-heading{
+  color: white;
+}
+
+.box{
+  padding: 5%;
+  margin-bottom: 5%;
+  width: 100%;
+  border-radius: 5px;
+  background-color: #40337b;
+}
+
+.container{
+  width: 100%;
+}
+
+.deposit-row{
+  padding-top: 20px;
+}
+
+hr{
+  background-color:  white
+}

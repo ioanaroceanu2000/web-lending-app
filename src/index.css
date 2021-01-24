@@ -11,3 +11,13 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+body {
+  background-color: #002262;
+
+  /* will be "on top", if browser supports it */
+  background-image: linear-gradient(#002262, #FF66C4);
+  background-size: 3000px 1000px;;
+  background-repeat: no-repeat;
+  height: 100%;
+}
