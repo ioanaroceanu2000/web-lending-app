@@ -3,8 +3,9 @@ import './App.css';
 import PriceUpdate from './price_update';
 import Balance from './Balance.js'
 import Web3 from 'web3';
-import {Container, Row, Col, Navbar} from 'react-bootstrap';
+import {Container, Row, Col, Navbar, Button} from 'react-bootstrap';
 import logo from './logoTr.png';
+import ActionButtons from './ActionButtons.js';
 
 class App extends Component {
 
@@ -34,7 +35,38 @@ class App extends Component {
     );
   }
 
+  switchColors(buttonNo){
+    let buttonsBackground = ["#FF66C4", "#FF66C4", "#FF66C4", "#FF66C4", "#FF66C4"];
+    buttonsBackground[buttonNo] = "#002262";
+    return buttonsBackground;
+  }
+
+
   render() {
+    /*const buttonStyle = {
+      color: "white",
+      width: "100%",
+      backgroundColor: "#FF66C4",
+      borderRadius: "8%",
+      color: "white",
+      fontSize: "100%",
+      padding: "10%",
+      borderColor: "#FF66C4",
+      border:"none",
+      outlineColor: "#FF66C4",
+    };
+    const buttonStyles = [buttonStyle, buttonStyle, buttonStyle, buttonStyle, buttonStyle];
+
+    let modifyStyle = function(buttonNo){
+      buttonStyles[buttonNo] = {
+        ...buttonStyle,
+        backgroundColor: "#002262",
+      }
+    };*/
+
+
+
+
     return (
       <div className="container-fluid">
       <Navbar>
@@ -47,7 +79,7 @@ class App extends Component {
         <div className="collapse navbar-collapse justify-content-end" id="navbarCollapse">
           <ul className="navbar-nav">
             <li className="nav-item active">
-              <a className="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
+              <a className="nav-link" href="#">Home <span className="sr-only">(current)</span></a>
             </li>
             <li className="nav-item">
               <a className="nav-link" href="#">Features</a>
@@ -70,7 +102,19 @@ class App extends Component {
             <hr/>
             <div> {this.renderBalances()} </div>
             </Col>
-            <Col className="columns columns-right" lg={7}>Action</Col>
+
+            <Col sm={1}><br/></Col>
+
+            <Col className="columns columns-right" lg={7}>
+
+              <Container>
+                <ActionButtons/>
+                
+                <Row>
+                </Row>
+              </Container>
+
+            </Col>
           </Row>
         </Container>
 

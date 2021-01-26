@@ -5,12 +5,12 @@ div {
 }
 
 .rows{
-  margin-top: 5%
+  margin-top: 5%;
 }
 
 .columns{
   padding: 25px 25px 25px 25px;
-  border: 4px;
+  border: 6px;
   border-radius: 5px;
 }
 
@@ -23,8 +23,37 @@ div {
 .columns-right{
   width: 100%;
   border-left-style: none;
-  background-color: #FFE4E1;
-  margin-left: 5%; 
+  background-color: #FFF0F5;
+}
+
+.button{
+  width: 100%;
+  border-radius: 8%;
+  border: none;
+  color: white;
+  font-size: 100%;
+  padding: 10%;
+  background-color: #FF66C4;
+  border-color: #FF66C4;
+  outline-color: #FF66C4;
+}
+
+.button:active{
+  background-color: #002262;
+  border-color: #002262;
+  outline-color: #002262;
+}
+
+.button:hover{
+  background-color: #002262;
+  border-color: #002262;
+  outline-color: #002262;
+}
+
+.button:focus{
+  background-color: #002262;
+  border-color: #002262;
+  outline-color: #002262;
 }
 
 .navbar a{
