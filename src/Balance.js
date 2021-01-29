@@ -8,7 +8,9 @@ import logo from './logo.png';
 
 class Balance extends Component {
 
-  /*componentWillMount(){
+  
+
+  componentWillMount(){
     this.leadBlockchainData();
   }
 
@@ -17,16 +19,6 @@ class Balance extends Component {
     const network = await web3.eth.net.getNetworkType();
     console.log("network:",network);
   }
-
-
-  renderPrices() {
-    const listTokens = ["ABC", "DEF", "GHI"];
-    return (
-      <PriceUpdate
-        tokens={listTokens}
-      />
-    );
-  }*/
 
   render() {
     return (
@@ -45,6 +37,7 @@ class Balance extends Component {
         </Row>
       </Container>
 
+      <br/>
 
       </div>
       <div className="box">

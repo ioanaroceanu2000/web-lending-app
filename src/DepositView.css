@@ -1,0 +1,60 @@
+
+.inputField{
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: none;
+  width: 100%;
+}
+
+.topValueInput{
+  width:80%;
+}
+
+.topTokenInput{
+  width:20%;
+}
+
+.valueInput{
+  width:100%;
+}
+
+.tokenInput{
+  width:100%;
+}
+
+.submitButton{
+  margin-top: 10px;
+  width: 50%;
+  height: 40px;
+  border-radius: 5px;
+  border: none;
+  color: white;
+  font-size: 100%;
+  text-align: center;
+  border-color: #FF66C4 !important;
+  outline-color: #FF66C4 !important;
+  background-color: #302f75;
+}
+
+.collateral-submit{
+  width: 50%;
+  height: 30px;
+  border-radius: 5px;
+  border: none;
+  color: white;
+  font-size: 100%;
+  text-align: center;
+  border-color: #FF66C4 !important;
+  outline-color: #FF66C4 !important;
+  background-color: #302f75;
+}
+
+h3{
+  font-weight: 900;
+  opacity: 0.9;
+}
+
+h4{
+  font-weight: 900;
+  opacity: 0.9;
+}

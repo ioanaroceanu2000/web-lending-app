@@ -1,0 +1,73 @@
+.token-details-row{
+  background-color: #302f75;
+  color: white;
+  font-size: 100%;
+  width: 100%;
+  border-radius: 5px;
+  padding: 8px 20px 8px 8px;
+  margin-bottom: 10px;
+}
+
+.heading-details-row{
+  font-size: 100%;
+  color: white;
+  width: 100%;
+  padding: 8px 20px 8px 8px;
+}
+
+.column{
+  width:100%;
+}
+
+.columnF{
+  width:100%;
+  border-radius: 10px;
+  background-color: black;
+}
+
+.divToken{
+  width:100%;
+}
+
+.container{
+  width: 300px;
+}
+
+.markets{
+  font-weight: 900;
+  opacity: 0.9;
+  margin-top: 60px;
+  color: white;
+}
+
+.button-loadMore{
+    width: 25%;
+    border-radius: 5px;
+    border: none;
+    color: white;
+    font-size: 100%;
+    text-align: center;
+    padding: 8px;
+    margin-top: 2%;
+    background-color: #FF66C4;
+}
+
+
+.button-addToken{
+    width: 100%;
+    border-radius: 5px;
+    border: none;
+    color: white;
+    font-size: 100%;
+    text-align: center;
+    padding: 8px;
+    background-color: #FF66C4;
+}
+
+.add-token-row{
+  margin-top: 4%;
+  background-color: #FFF0F5;
+  border-radius: 5px;
+  padding: 2%;
+  box-shadow: 10px 15px 15px 5px #302f75;
+}

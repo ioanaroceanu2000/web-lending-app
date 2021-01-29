@@ -5,6 +5,7 @@ import Balance from './Balance.js'
 import Web3 from 'web3';
 import {Container, Row, Col, Navbar, Button} from 'react-bootstrap';
 import logo from './logoTr.png';
+import warwicklogo from './warwicklogo.png';
 import ActionButtons from './ActionButtons.js';
 
 class App extends Component {
@@ -20,15 +21,6 @@ class App extends Component {
   }
 
 
-  renderPrices() {
-    const listTokens = ["ABC", "DEF", "GHI"];
-    return (
-      <PriceUpdate
-        tokens={listTokens}
-      />
-    );
-  }
-
   renderBalances() {
     return(
       <Balance />
@@ -43,29 +35,6 @@ class App extends Component {
 
 
   render() {
-    /*const buttonStyle = {
-      color: "white",
-      width: "100%",
-      backgroundColor: "#FF66C4",
-      borderRadius: "8%",
-      color: "white",
-      fontSize: "100%",
-      padding: "10%",
-      borderColor: "#FF66C4",
-      border:"none",
-      outlineColor: "#FF66C4",
-    };
-    const buttonStyles = [buttonStyle, buttonStyle, buttonStyle, buttonStyle, buttonStyle];
-
-    let modifyStyle = function(buttonNo){
-      buttonStyles[buttonNo] = {
-        ...buttonStyle,
-        backgroundColor: "#002262",
-      }
-    };*/
-
-
-
 
     return (
       <div className="container-fluid">
@@ -94,30 +63,42 @@ class App extends Component {
         </div>
       </Navbar>
 
-        <Container className="container">
-          <Row className="rows">
-            <Col className="columns columns-left" lg={4}>
-            <br/>
-            <h3>Your Balance</h3>
-            <hr/>
-            <div> {this.renderBalances()} </div>
-            </Col>
+      <Container className="container">
+        <Row className="rows">
+          <Col className="columns columns-left" lg={4}>
+          <h3 style={{marginTop: "18px"}}>Your Balance</h3>
+          <hr/>
+          <div> {this.renderBalances()} </div>
+          </Col>
 
-            <Col sm={1}><br/></Col>
+          <Col sm={1}><br/></Col>
 
-            <Col className="columns columns-right" lg={7}>
+          <Col className="columns columns-right" lg={7}>
+            <Container>
+              <ActionButtons/>
+            </Container>
+          </Col>
+        </Row>
 
-              <Container>
-                <ActionButtons/>
-                
-                <Row>
-                </Row>
-              </Container>
+        <PriceUpdate/>
 
-            </Col>
-          </Row>
-        </Container>
+      </Container>
 
+      <div className="footer">
+      <Navbar expand="lg" sticky="bottom" className="footer">
+        <Navbar.Brand href="#home">
+          <img src={warwicklogo} width="35%" height="35%"
+
+            alt="Warwick University"
+          />
+        </Navbar.Brand>
+        <Navbar.Collapse className="justify-content-end">
+          <Navbar.Text style={{color: "white"}}>
+          @ "Smart Contracts Lending" by Ioana Roceanu at University of Warwick
+          </Navbar.Text>
+        </Navbar.Collapse>
+      </Navbar>
+      </div>
 
       </div>
     );

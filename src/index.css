@@ -19,5 +19,6 @@ body {
   background-image: linear-gradient(#002262, #FF66C4);
   background-size: 3000px 1000px;;
   background-repeat: no-repeat;
+  background-attachment: fixed;
   height: 100%;
 }

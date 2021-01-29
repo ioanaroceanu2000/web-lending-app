@@ -1,7 +1,9 @@
 import React, {Component} from 'react';
 import Web3 from 'web3';
 import {Transaction} from 'ethereumjs-tx';
+import {Container, Row, Col, Navbar, Button, Form} from 'react-bootstrap';
 import {LiquidityPool_ABI, LiquidityPool_ADD, Exchange_ADD, Exchange_ABI, ERC20_ABI, Token_ABI, Token_BYTECODE } from './abis/abi'
+import './price_update.css';
 
 class PriceUpdate extends Component {
 
@@ -10,24 +12,21 @@ class PriceUpdate extends Component {
     this.state = {
       isLoaded: false,
       tokensLoaded: false,
-      pricesDict: {}, // this is a dictionary tokenName -> price
+      pricesDict: {}, // this is a dictionary realID -> [name,price]
       tokenIDs: [],
       seconds: 0,
       liquidityPool: null,
       exchange: null,
-      web3: null
+      web3: null,
+      noLoadedTokens: 50
     };
   }
 
   ///// UTILS
-
   // deploy the code for a token and return its address
   async depolyToken(name, symbol, web3){
     //create contract and depoly
     var contract = new web3.eth.Contract(Token_ABI);
-    /*const contractData = Contract.new.getData('Weth', 'Weth',{
-        data: '0x' + Token_BYTECODE
-    });*/
     const account = await web3.utils.toChecksumAddress('0x614114ec0a5a6def6172d8cb210facb63d459c04');
     const gasPrice = await web3.utils.toWei('100', 'gwei');
     const gasPriceHex = await web3.utils.toHex(gasPrice);
@@ -86,11 +85,11 @@ class PriceUpdate extends Component {
   }
 
   componentWillMount(){
-    this.leadBlockchainData();
+    //this.leadBlockchainData();
   }
 
   async updatePricesFromOwner(token, web3, account){
-    
+
     const privateKey = new Buffer('8ba9b5140d9b73afbdbb177247abe308242eaa55a955a52f7ebf2c2ca8aae99a', 'hex');
     var nonce = await web3.eth.getTransactionCount(account);
     const gasLimit = await web3.utils.toHex(2000000);
@@ -172,7 +171,7 @@ class PriceUpdate extends Component {
 
 
   componentDidMount() {
-    this.interval = setInterval(() => this.setState({ seconds: this.state.seconds + 10 }), 300000);
+    this.interval = setInterval(() => this.setState({ seconds: this.state.seconds + 10 }), 30000);
   }
   componentWillUnmount() {
     clearInterval(this.interval);
@@ -220,7 +219,64 @@ class PriceUpdate extends Component {
 
   }
 
+  displayTokenDetails(tokenID){
+    return(
+      <Row className="token-details-row">
+        <Col lg={6} className="column symbol">{this.state.pricesDict[tokenID][0]}</Col>
+        <Col lg={2} className="column symbol">3.15%</Col>
+        <Col lg={2} className="column symbol">4.12%</Col>
+        <Col lg={2} className="column symbol">{this.state.pricesDict[tokenID][1].toFixed(4)}</Col>
+      </Row>
+    )
+  }
 
+  displayAllTokenDetails(noToLoad){
+    let allTokensDetails = [];
+    var i;
+    for(i=0; i < noToLoad; i++){
+      allTokensDetails.push(this.displayTokenDetails(this.state.tokenIDs[i]));
+    }
+    return allTokensDetails;
+  }
+
+  loadMore(){
+    this.setState({noLoadedTokens: this.state.noLoadedTokens + 50});
+  }
+
+  showLoadMoreButton(){
+    if(this.state.noLoadedTokens < 300){
+      return(<button className="button-loadMore" type="button" onClick={(e) => this.loadMore()}>Load 50 more...</button>);
+    }
+  }
+
+  displayAddTokenOption(){
+    var tokenOptions = [];
+    var i =0;
+    for(i=0; i < 300; i++){
+      const tokenID = this.state.tokenIDs[i];
+      const symbol = this.state.pricesDict[tokenID][0];
+      tokenOptions.push(<option>{symbol}</option>);
+    }
+    return(
+    <Row className="add-token-row">
+      <Col><h4 style={{marginTop:"7px"}}>Add pool to protocol</h4></Col>
+
+      <Col>
+        <Form>
+        <Form.Group>
+          <Form.Control size="md" as="select" style={{marginTop:"5px"}}>
+          {tokenOptions}
+          </Form.Control>
+        </Form.Group>
+        </Form>
+      </Col>
+
+      <Col>
+      <button className="button-addToken" type="button" style={{marginTop:"5px"}}>Add Pool</button>
+      </Col>
+    </Row>
+  );
+  }
 
   render() {
     const updatedTokenList = this.state.tokenIDs.map((token)=>{
@@ -234,12 +290,24 @@ class PriceUpdate extends Component {
     var isLoaded = this.state.isLoaded;
 
     if (!isLoaded){
-      return <div>Loading .... {this.state.seconds}</div>;
+      return(<div>Loading...</div>);
     }
     else{
       return (
         <div className="container">
-          <ul>{updatedTokenList}</ul>
+          <Row><h2 className="markets">Markets</h2></Row>
+          <Row className="heading-details-row">
+            <Col lg={6} className="details-headings">Symbol</Col>
+            <Col lg={2} className="details-headings">Deposit APY</Col>
+            <Col lg={2} className="details-headings">Borrow APY</Col>
+            <Col lg={2} className="details-headings">Price</Col>
+          </Row>
+          {this.displayAllTokenDetails(this.state.noLoadedTokens)}
+          <Row>
+          {this.showLoadMoreButton()}
+          </Row>
+
+          {this.displayAddTokenOption()}
         </div>
       );
     }

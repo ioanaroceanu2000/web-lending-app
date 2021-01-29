@@ -18,12 +18,14 @@ div {
   width: 100%;
   border-right-style: none;
   background-color: #FFF0F5;
+  box-shadow: 10px 15px 15px 5px #302f75;
 }
 
 .columns-right{
   width: 100%;
   border-left-style: none;
   background-color: #FFF0F5;
+  box-shadow: 10px 15px 15px 5px #302f75;
 }
 
 .button{
@@ -66,4 +68,12 @@ div {
 
 .container{
   width: 100%;
+}
+
+.footer{
+  padding: 10px;
+  width: 100%;
+  opacity: 0.9;
+  margin-top: 2%;
+  color:white;
 }
