@@ -64,8 +64,8 @@ class PriceUpdate extends Component {
   async uploadPrices(){
     const prices = await getTokenAPIPrices();
     this.setState({pricesDict: prices, isLoaded:true});
+    this.props.handleChangedPrices(this.state.pricesDict);
     console.log("Prices have been updated");
-    console.log(this.state.pricesDict);
   }
 
   async updatePricesFromOwner(token, web3, account){

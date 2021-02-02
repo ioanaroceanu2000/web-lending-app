@@ -34,7 +34,7 @@ class ActionButtons extends Component {
         <Col><button className="button" style={{backgroundColor: this.state.buttonColors[4]}}  type="button radio" onClick={(e) => this.modifyStyle(4)}>Repay</button></Col>
       </Row>
       <hr className="hrButtons"/>
-      <Row> <ActionView type={this.state.actionType}/> </Row>
+      <Row> <ActionView type={this.state.actionType} tokens={this.props.tokens}/> </Row>
       </Container>
       </div>
     );

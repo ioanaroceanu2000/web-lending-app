@@ -7,10 +7,26 @@ import './DepositView.css';
 class ActionView extends Component {
 
   constructor(props) {
+    // props: tokens list {fakeID, realID, symbol}
     super(props);
   }
 
+  options(){
+    var tokenOptions = [];
+    var i =0;
+    const len = this.props.tokens.length;
+    for(i=0; i < len; i++){
+      const fakeId = this.props.tokens[i].fakeID;
+      const symbol = this.props.tokens[i].symbol;
+      tokenOptions.push(<option value={fakeId}>{symbol}</option>);
+    }
+    return tokenOptions;
+  }
+
   render() {
+    const options = this.options();
+    console.log("These are the options");
+    console.log(options);
     if(this.props.type == "Collateral"){
       return (
         <div className="container">
@@ -28,11 +44,7 @@ class ActionView extends Component {
 
               <Form.Group controlId="exampleForm.ControlSelect1" className="topTokenInput">
                 <Form.Control size="sm" as="select" className="tokenInput">
-                  <option>1</option>
-                  <option>2</option>
-                  <option>3</option>
-                  <option>4</option>
-                  <option>5</option>
+                  {options}
                 </Form.Control>
               </Form.Group>
             </Form>
@@ -73,11 +85,7 @@ class ActionView extends Component {
 
               <Form.Group controlId="exampleForm.ControlSelect1" className="topTokenInput">
                 <Form.Control size="sm" as="select" className="tokenInput">
-                  <option>1</option>
-                  <option>2</option>
-                  <option>3</option>
-                  <option>4</option>
-                  <option>5</option>
+                  {options}
                 </Form.Control>
               </Form.Group>
             </Form>
