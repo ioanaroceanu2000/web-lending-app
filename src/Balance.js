@@ -4,20 +4,41 @@ import PriceUpdate from './price_update';
 import Web3 from 'web3';
 import {Container, Row, Col, Navbar} from 'react-bootstrap';
 import logo from './logo.png';
+import {LiquidityPool_ABI, LiquidityPool_ADD, Exchange_ADD, Exchange_ABI, ERC20_ABI, Token_ABI, Token_BYTECODE } from './abis/abi'
+import {loadWeb3, getAccount, getUserDeposit, getUserLoanDetails} from './utils.js';
 
 
 class Balance extends Component {
 
-  
+  constructor(props) {
+    super(props);
+    this.state = {
+      userAddress: null,
+      userDeposit: 0,
+      depositedToken: '',
+      userCollateral: 0,
+      collateralToken: '',
+      userOwed: 0,
+      owedToken:'',
+      liquidityPool: null,
+    };
+  }
 
   componentWillMount(){
     this.leadBlockchainData();
   }
 
   async leadBlockchainData(){
-    const web3 = new Web3(Web3.givenProvider || "http://localhost:8545");
-    const network = await web3.eth.net.getNetworkType();
-    console.log("network:",network);
+    const web3 = await loadWeb3();
+    const account = await getAccount(web3);
+
+    //initialise instance of LP contract
+    const lpinstance = new web3.eth.Contract(LiquidityPool_ABI, LiquidityPool_ADD);
+    this.setState({liquidityPool: lpinstance, userAddress: account});
+
+    /*const [depositValue, depFakeTokenID] = await getUserDeposit(web3,this.state.userAddress, this.state.liquidityPool);
+    const [collateral, collFakeTokenID, owed, borrFakeTokenID] = await getUserLoanDetails(web3,this.state.userAddress, this.state.liquidityPool);
+    this.setState({userDeposit: depositValue, userCollateral: collateral, userOwed: owed});*/
   }
 
   render() {

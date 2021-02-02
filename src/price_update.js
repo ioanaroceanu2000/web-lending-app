@@ -4,6 +4,8 @@ import {Transaction} from 'ethereumjs-tx';
 import {Container, Row, Col, Navbar, Button, Form} from 'react-bootstrap';
 import {LiquidityPool_ABI, LiquidityPool_ADD, Exchange_ADD, Exchange_ABI, ERC20_ABI, Token_ABI, Token_BYTECODE } from './abis/abi'
 import './price_update.css';
+import {getTokenAPIPrices} from './priceUpdate.js';
+
 
 class PriceUpdate extends Component {
 
@@ -23,37 +25,7 @@ class PriceUpdate extends Component {
   }
 
   ///// UTILS
-  // deploy the code for a token and return its address
-  async depolyToken(name, symbol, web3){
-    //create contract and depoly
-    var contract = new web3.eth.Contract(Token_ABI);
-    const account = await web3.utils.toChecksumAddress('0x614114ec0a5a6def6172d8cb210facb63d459c04');
-    const gasPrice = await web3.utils.toWei('100', 'gwei');
-    const gasPriceHex = await web3.utils.toHex(gasPrice);
-    const nonce = await web3.eth.getTransactionCount(account);
-    const nonceHex = await web3.utils.toHex(nonce);
 
-    console.log(account);
-    console.log(web3.utils.isAddress(account));
-    contract.options.data = Token_BYTECODE;
-
-    var TokenTx = contract.deploy({
-        arguments: [name, symbol]
-    });
-    await window.ethereum.enable();
-    var tokenAddress;
-    console.log("Deploy token");
-    var instance = await TokenTx.send({
-        from: account,
-        gasLimit: 1500000,
-        gasPrice: gasPriceHex,
-        value: 0
-    }).then(function(newContractInstance){
-        tokenAddress = newContractInstance.options.address; // instance with the new contract address
-    });
-
-    return tokenAddress;
-  }
 
   // give token from owner to another account
   async giveTokenTo(account, owner, tokenInstance, amount){
@@ -86,6 +58,14 @@ class PriceUpdate extends Component {
 
   componentWillMount(){
     //this.leadBlockchainData();
+    this.uploadPrices();
+  }
+
+  async uploadPrices(){
+    const prices = await getTokenAPIPrices();
+    this.setState({pricesDict: prices, isLoaded:true});
+    console.log("Prices have been updated");
+    console.log(this.state.pricesDict);
   }
 
   async updatePricesFromOwner(token, web3, account){
@@ -154,32 +134,16 @@ class PriceUpdate extends Component {
   }
 
 
-
-  async createToken(web3, _symbol, _optimal_utilisation, _collateral_factor, _base_rate, _slope1, _slope2, _spread, _price){
-    var address = await this.depolyToken(_symbol,_symbol,web3);
-    // create pool in exchange
-    const account = await web3.utils.toChecksumAddress('0x614114ec0a5a6def6172d8cb210facb63d459c04');
-    await window.ethereum.enable();
-    console.log("Create the pool in Exchange");
-    await this.state.exchange.methods.createPool(address,_price,_symbol).send({from: account});
-    // create token in LiquidityPool
-    await window.ethereum.enable();
-    console.log("Create the pool in LP");
-    await this.state.liquidityPool.methods.createToken( _symbol,address,_optimal_utilisation,_collateral_factor, _base_rate,_slope1,_slope2,_spread,_price).send({from: account});
-    return address;
-  }
-
-
-  componentDidMount() {
+/*  componentDidMount() {
     this.interval = setInterval(() => this.setState({ seconds: this.state.seconds + 10 }), 30000);
   }
   componentWillUnmount() {
     clearInterval(this.interval);
-  }
+  }*/
 
   componentDidUpdate(prevProps, prevState) {
     // make an API request only if 5 minutes passed - 30 seconds
-    if(prevState.seconds != this.state.seconds){
+    /*if(prevState.seconds != this.state.seconds){
       const url = "https://uniswapmyapi.herokuapp.com/tokenPrices";
       fetch(url)
       .then(res => res.json())
@@ -215,7 +179,7 @@ class PriceUpdate extends Component {
         this.setState({isLoaded: true});
       })
       .catch(console.log);
-    }
+    }*/
 
   }
 
@@ -233,8 +197,13 @@ class PriceUpdate extends Component {
   displayAllTokenDetails(noToLoad){
     let allTokensDetails = [];
     var i;
+    if(this.props.loadedTokens.length < noToLoad){
+      noToLoad = this.props.loadedTokens.length;
+    }
     for(i=0; i < noToLoad; i++){
-      allTokensDetails.push(this.displayTokenDetails(this.state.tokenIDs[i]));
+      console.log("this is one token to be added");
+      console.log(this.props.loadedTokens[i]);
+      allTokensDetails.push(this.displayTokenDetails(this.props.loadedTokens[i]));
     }
     return allTokensDetails;
   }
@@ -249,34 +218,6 @@ class PriceUpdate extends Component {
     }
   }
 
-  displayAddTokenOption(){
-    var tokenOptions = [];
-    var i =0;
-    for(i=0; i < 300; i++){
-      const tokenID = this.state.tokenIDs[i];
-      const symbol = this.state.pricesDict[tokenID][0];
-      tokenOptions.push(<option>{symbol}</option>);
-    }
-    return(
-    <Row className="add-token-row">
-      <Col><h4 style={{marginTop:"7px"}}>Add pool to protocol</h4></Col>
-
-      <Col>
-        <Form>
-        <Form.Group>
-          <Form.Control size="md" as="select" style={{marginTop:"5px"}}>
-          {tokenOptions}
-          </Form.Control>
-        </Form.Group>
-        </Form>
-      </Col>
-
-      <Col>
-      <button className="button-addToken" type="button" style={{marginTop:"5px"}}>Add Pool</button>
-      </Col>
-    </Row>
-  );
-  }
 
   render() {
     const updatedTokenList = this.state.tokenIDs.map((token)=>{
@@ -307,7 +248,6 @@ class PriceUpdate extends Component {
           {this.showLoadMoreButton()}
           </Row>
 
-          {this.displayAddTokenOption()}
         </div>
       );
     }
