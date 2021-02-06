@@ -113,6 +113,7 @@ class App extends Component {
     this.setState({ toBeAdded: e.target.value });
   }
 
+
   compileSymbolforFakeIDs(){
     let dict = {};
     var i;
@@ -228,7 +229,7 @@ class App extends Component {
             </Col>
           </Row>
 
-          <PriceUpdate loadedTokens={this.state.addedTokenIDs} prices={this.state.prices}/>
+          <PriceUpdate loadedTokens={this.state.addedTokenIDs} prices={this.state.prices} realToFakeID={this.state.realToFakeID}/>
 
           {this.displayAddTokenOption()}
 

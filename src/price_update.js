@@ -5,6 +5,7 @@ import {Container, Row, Col, Navbar, Button, Form} from 'react-bootstrap';
 import {LiquidityPool_ABI, LiquidityPool_ADD, Exchange_ADD, Exchange_ABI, ERC20_ABI, Token_ABI, Token_BYTECODE } from './abis/abi'
 import './price_update.css';
 import {getTokenAPIPrices} from './priceUpdate.js';
+import {getTokenRates} from './utils.js';
 
 
 class PriceUpdate extends Component {
@@ -12,32 +13,33 @@ class PriceUpdate extends Component {
   constructor(props) {
     super(props);
     // props: prices realID -> [symbol,price]
+    // props: loadedTokens [realIDs]
+    // props: realToFakeID real:fake
     this.state = {
-      isLoaded: true,
+      isLoaded: false,
       tokenIDs: [],
       seconds: 0,
       liquidityPool: null,
       exchange: null,
       web3: null,
-      noLoadedTokens: 50
+      noLoadedTokens: 50,
+      interestRates: {} // realID -> {borrowIR, depositIR}
     };
-  }
-
-
-
-  // give token from owner to another account
-  async giveTokenTo(account, owner, tokenInstance, amount){
-    //send tokens to adresses
-    let value = this.state.web3.utils.toHex(amount);
-    await tokenInstance.methods.transfer(account, value).send({from: owner}).on('transactionHash', function(hash){
-        //console.log(hash);
-      });
-    var balance;
-    await tokenInstance.methods.balanceOf(account).call().then(res =>{ balance = res; });
   }
 
   componentWillMount(){
     this.loadBlockchainData();
+  }
+
+  async registerTokensIR(){
+    let interestRates = {}
+    var i;
+    for(i=0; i < this.props.loadedTokens.length; i++){
+      const fakeID = this.props.realToFakeID[this.props.loadedTokens[i]];
+      var [borrowir, depoir] = await getTokenRates(this.state.web3, fakeID, this.state.liquidityPool);
+      interestRates[this.props.loadedTokens[i]] = {borrowIR: borrowir, depositIR: depoir};
+    }
+    this.setState({interestRates: interestRates});
   }
 
   /*async uploadPrices(){
@@ -53,6 +55,8 @@ class PriceUpdate extends Component {
     const lpinstance = new web3.eth.Contract(LiquidityPool_ABI, LiquidityPool_ADD);
     const exinstance = new web3.eth.Contract(Exchange_ABI, Exchange_ADD);
     this.setState({liquidityPool: lpinstance, exchange: exinstance, web3: web3});
+    await this.registerTokensIR();
+    this.setState({isLoaded: true});
   }
 
 
@@ -106,11 +110,15 @@ class PriceUpdate extends Component {
   }
 
   displayTokenDetails(tokenID){
+    console.log(tokenID);
+    console.log(this.state.interestRates);
+    const borrowIR = this.state.interestRates[tokenID].borrowIR;
+    const depositIR = this.state.interestRates[tokenID].depositIR;
     return(
       <Row className="token-details-row">
         <Col lg={6} className="column symbol">{this.props.prices[tokenID][0]}</Col>
-        <Col lg={2} className="column symbol">3.15%</Col>
-        <Col lg={2} className="column symbol">4.12%</Col>
+        <Col lg={2} className="column symbol">{depositIR/100}%</Col>
+        <Col lg={2} className="column symbol">{borrowIR/100}%</Col>
         <Col lg={2} className="column symbol">{this.props.prices[tokenID][1].toFixed(4)}</Col>
       </Row>
     )
@@ -150,10 +158,13 @@ class PriceUpdate extends Component {
 
     var isLoaded = this.state.isLoaded;
 
+
+
     if (!isLoaded){
       return(<div>Loading...</div>);
     }
     else{
+      const displayTokens = this.displayAllTokenDetails(this.state.noLoadedTokens);
       return (
         <div className="container">
           <Row><h2 className="markets">Markets</h2></Row>
@@ -163,7 +174,7 @@ class PriceUpdate extends Component {
             <Col lg={2} className="details-headings">Borrow APY</Col>
             <Col lg={2} className="details-headings">Price</Col>
           </Row>
-          {this.displayAllTokenDetails(this.state.noLoadedTokens)}
+          {displayTokens}
           <Row>
           {this.showLoadMoreButton()}
           </Row>

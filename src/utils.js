@@ -1,6 +1,6 @@
 import Web3 from 'web3';
 import {Transaction} from 'ethereumjs-tx';
-import {LiquidityPool_ABI, LiquidityPool_ADD, Exchange_ADD, Exchange_ABI, ERC20_ABI, Token_ABI, Token_BYTECODE } from './abis/abi';
+import {IRVAR_ABI, IRVAR_ADD, LiquidityPool_ABI, LiquidityPool_ADD, Exchange_ADD, Exchange_ABI, ERC20_ABI, Token_ABI, Token_BYTECODE } from './abis/abi';
 import fs from 'fs';
 
 /// GET CHAIN DATA
@@ -48,6 +48,7 @@ export async function getUserLoanDetails(web3, userAdd, liquidityPool){
 
   if(!web3.utils.toBN(userDetails.tokenCollateralised).isZero() &&  !web3.utils.toBN(userDetails.tokenBorrowed).isZero(userDetails.tokenBorrowed)){
     const loanDetails = await liquidityPool.methods.getUserDetails(userAdd).call();
+    console.log(loanDetails);
     return loanDetails;
   }else if(!web3.utils.toBN(userDetails.tokenCollateralised).isZero()){
     const collDetails = await liquidityPool.methods.usersBalance(userAdd).call();
@@ -55,6 +56,21 @@ export async function getUserLoanDetails(web3, userAdd, liquidityPool){
   }else{
     return [0,'',0,''];
   }
+}
+
+export async function getTokenRates(web3, tokenAddress, liquidityPool){
+  const tokenAdd = await web3.utils.toChecksumAddress(tokenAddress);
+
+  const tokenData = await liquidityPool.methods.tokensCoreData(tokenAdd).call();
+  const utilisation = tokenData.utilisation;
+  console.log("This is the utilisation");
+  console.log(utilisation);
+
+  const ivarInstance = new web3.eth.Contract(IRVAR_ABI, IRVAR_ADD);
+  const borrowIR = await ivarInstance.methods.borrowInterestRate(tokenAdd,utilisation).call();
+  const depositIR = await ivarInstance.methods.depositInterestRate(tokenAdd,utilisation).call();
+
+  return [borrowIR, depositIR];
 }
 
 

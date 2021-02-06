@@ -120,7 +120,7 @@ class ActionView extends Component {
           <Row>
             <Form className="inputField">
               <Form.Group controlId="formBasicEmail" className="topValueInput">
-                <Form.Control size="sm" type="email" placeholder={this.state.amountToTransferUSD} className="valueInput"/>
+                <Form.Control readOnly size="sm" type="email" placeholder={this.state.amountToTransferUSD} className="valueInput"/>
               </Form.Group>
 
             <Form.Group className="topTokenInput">
@@ -156,7 +156,7 @@ class ActionView extends Component {
           <Row>
             <Form className="inputField">
               <Form.Group controlId="formBasicEmail" className="topValueInput">
-                <Form.Control size="sm" type="email" placeholder={this.state.amountToTransferUSDColl.toString()} className="valueInput"/>
+                <Form.Control readOnly size="sm" type="email" placeholder={this.state.amountToTransferUSDColl.toString()} className="valueInput"/>
               </Form.Group>
 
             <Form.Group className="topTokenInput">
@@ -199,7 +199,7 @@ class ActionView extends Component {
           <Row>
             <Form className="inputField">
             <Form.Group controlId="formBasicEmail" className="topValueInput">
-              <Form.Control size="lg" type="email" placeholder={this.state.amountToTransferUSD.toString()} className="valueInput"/>
+              <Form.Control size="lg" readOnly type="email" placeholder={this.state.amountToTransferUSD.toString()} className="valueInput"/>
             </Form.Group>
 
             <Form.Group className="topTokenInput">
