@@ -2,7 +2,7 @@ import Web3 from 'web3';
 import {LiquidityPool_ABI, LiquidityPool_ADD, Exchange_ADD, Exchange_ABI, ERC20_ABI, Token_ABI, Token_BYTECODE } from './abis/abi'
 
 
-// returns {realID: price}
+// returns realID: [symbol, prices]
 export async function getTokenAPIPrices(){
   const url = "https://uniswapmyapi.herokuapp.com/tokenPrices";
   let response = await fetch(url);

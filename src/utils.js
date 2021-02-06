@@ -1,7 +1,7 @@
 import Web3 from 'web3';
-import {LiquidityPool_ABI, LiquidityPool_ADD, Exchange_ADD, Exchange_ABI, ERC20_ABI, Token_ABI, Token_BYTECODE } from './abis/abi'
+import {Transaction} from 'ethereumjs-tx';
+import {LiquidityPool_ABI, LiquidityPool_ADD, Exchange_ADD, Exchange_ABI, ERC20_ABI, Token_ABI, Token_BYTECODE } from './abis/abi';
 import fs from 'fs';
-import LoadedTokens from './LoadedTokens.json';
 
 /// GET CHAIN DATA
 
@@ -36,10 +36,17 @@ export async function getUserLoanDetails(web3, userAdd, liquidityPool){
   console.log("get user's loan details");
   await window.ethereum.enable();
   const userDetails = await liquidityPool.methods.usersBalance(userAdd).call();
+  console.log("User loan");
+
+  console.log("Loan token");
+  console.log(userDetails.tokenBorrowed);
+  console.log("User coll");
+  console.log("Coll Token");
+  console.log(userDetails.tokenCollateralised);
   // user either has both coll and loan or just collateral or none
   // user cannot havo only loan
 
-  if(!web3.utils.toBN(userDetails.tokenCollateralised).isZero() &&  !web3.utils.toBN(userDetails.tokenCollateralised).isZero(userDetails.tokenBorrowed)){
+  if(!web3.utils.toBN(userDetails.tokenCollateralised).isZero() &&  !web3.utils.toBN(userDetails.tokenBorrowed).isZero(userDetails.tokenBorrowed)){
     const loanDetails = await liquidityPool.methods.getUserDetails(userAdd).call();
     return loanDetails;
   }else if(!web3.utils.toBN(userDetails.tokenCollateralised).isZero()){
@@ -53,7 +60,7 @@ export async function getUserLoanDetails(web3, userAdd, liquidityPool){
 
 
 
-//// CHAIN ACTIONS
+//// CHAIN ACTIONS HELPERS
 
 // deploy the code for a token and return its address
 export async function depolyToken(name, symbol, web3, userAddress){
@@ -107,7 +114,135 @@ export async function createToken(userAccount, web3, tokenDetails, exchange, liq
   return address;
 }
 
+// give permission to contract to retreive tokens
+async function givePermissionToContract(web3, account, amount, tokenAddress){
+  const weiAmount = amount;
+  const tokenAdd = await web3.utils.toChecksumAddress(tokenAddress);
+  console.log(tokenAdd);
+  const tokenInstance = new web3.eth.Contract(ERC20_ABI, tokenAddress);
+  console.log("try getting permission");
+  await window.ethereum.enable();
+  await tokenInstance.methods.approve(LiquidityPool_ADD, weiAmount).send({from: account});
+}
 
+// updates prices in exchange for given token from the owner address
+export async function updateExchangePricesFromOwner(web3, exchange, token, price){
+
+  const account = await web3.utils.toChecksumAddress('0x614114ec0a5a6def6172d8cb210facb63d459c04');
+  const privateKey = new Buffer('8ba9b5140d9b73afbdbb177247abe308242eaa55a955a52f7ebf2c2ca8aae99a', 'hex');
+  var nonce = await web3.eth.getTransactionCount(account);
+  const gasLimit = await web3.utils.toHex(2000000);
+  const priceRounded = Math.round(price*10);
+  const data = await exchange.methods.updatePrice(token, priceRounded).encodeABI();
+  const gasPrice = await web3.utils.toWei('100', 'gwei');
+  const gasPriceHex = await web3.utils.toHex(gasPrice);
+  const rawTx = {
+    nonce: nonce,
+    from: account,
+    to: Exchange_ADD,
+    gasLimit: gasLimit,
+    gasPrice: gasPriceHex,
+    chainId: 3,
+    data: data
+  };
+  // private key of the second account
+  var tx = new Transaction(rawTx, {'chain':'ropsten'});
+  tx.sign(privateKey);
+  var serializedTx = tx.serialize();
+  console.log("Send signed transaction on price update");
+  const receipt = await web3.eth.sendSignedTransaction('0x' + serializedTx.toString('hex'));
+  console.log(receipt);
+}
+
+// updates prices in liquidity pool for given token
+export async function updateLiquidityPoolPrices(web3, liquidityPool, token, account){
+
+  const tokenAddress = await web3.utils.toChecksumAddress(token);
+  await window.ethereum.enable();
+  await liquidityPool.methods.updateTokenPrice(token).send({from: account});
+}
+
+
+
+//// PROTOCOL FUNCTIONALITIES
+
+export async function deposit(userAccount, amount, fakeID, web3, liquidityPool){
+
+  const tokenAdd = await web3.utils.toChecksumAddress(fakeID);
+  await givePermissionToContract(web3, userAccount, amount, tokenAdd);
+  console.log("TRY DEPOSIT");
+  const weiAmount = amount;
+  await window.ethereum.enable();
+  liquidityPool.methods.deposit(userAccount, weiAmount, tokenAdd).send({from: userAccount}).on('error', function(error){
+    alert("Transaction Failed: You are not allowed to have deposits in more than one token.");
+  });
+  console.log("Deposit DONE");
+}
+
+export async function borrow(userAccount, amount, fakeID, web3, liquidityPool){
+
+  const tokenAdd = await web3.utils.toChecksumAddress(fakeID);
+  console.log("TRY Borrow");
+  const weiAmount = amount;
+  await window.ethereum.enable();
+  // borrow(address payable user, uint amount, address tokenId)
+  liquidityPool.methods.borrow(userAccount, weiAmount, tokenAdd).send({from: userAccount}).on('error', function(error){
+    alert("Transaction Failed: You either already have a loan in a different token OR you have overborrowed");
+  });
+  console.log("Borrow DONE");
+}
+
+export async function depositCollateral(userAccount, amount, fakeID, web3, liquidityPool){
+
+  const tokenAdd = await web3.utils.toChecksumAddress(fakeID);
+  await givePermissionToContract(web3, userAccount, amount, tokenAdd);
+  console.log("TRY DEPOSIT COLLATERAL");
+  const weiAmount = amount;
+  await window.ethereum.enable();
+  // depositCollateral(address payable user, uint amount, address tokenId)
+  liquidityPool.methods.depositCollateral(userAccount, weiAmount, tokenAdd).send({from: userAccount}).on('error', function(error){
+    alert("Transaction Failed: You are not allowed to have collateral in more than one token.");
+  });
+  console.log("DEPOSIT COLLATERAL DONE");
+}
+
+export async function collateralFromDeposit(userAccount, amount, fakeID, web3, liquidityPool){
+
+  const tokenAdd = await web3.utils.toChecksumAddress(fakeID);
+  console.log("TRY ADD COLLATERAL FROM DEPOSIT");
+  const weiAmount = amount;
+  await window.ethereum.enable();
+  await liquidityPool.methods.switchDepositToCollateral(userAccount, weiAmount, tokenAdd).send({from: userAccount}).on('error', function(error){
+    alert("Transaction Failed: You don't have enough in deposit OR you already have collateral in a different token OR the protocol's liquidity state does not permit deposit withdrawals");
+  });
+  console.log("DEPOSIT COLLATERAL DONE");
+}
+
+//repay(address payable user, uint amount)
+export async function repay(userAccount, amount, fakeID, web3, liquidityPool){
+
+  const tokenAdd = await web3.utils.toChecksumAddress(fakeID);
+  await givePermissionToContract(web3, userAccount, amount, tokenAdd);
+  console.log("TRY REPAY");
+  const weiAmount = amount;
+  await window.ethereum.enable();
+  await liquidityPool.methods.repay(userAccount, weiAmount).send({from: userAccount}).on('error', function(error){
+    alert("Transaction Failed: You paied more than you owe");
+  });
+  console.log("REPAY DONE");
+}
+
+export async function redeem(userAccount, amount, fakeID, web3, liquidityPool){
+
+  const tokenAdd = await web3.utils.toChecksumAddress(fakeID);
+  console.log("TRY REDEEM");
+  const weiAmount = amount;
+  await window.ethereum.enable();
+  await liquidityPool.methods.redeem(userAccount, weiAmount).send({from: userAccount}).on('error', function(error){
+    alert("Transaction Failed: The protocol's liquidity state does not permit deposit withdrawals OR value exceeds your current deposit value");
+  });
+  console.log("REDEEM DONE");
+}
 
 
 //// API data
@@ -141,9 +276,9 @@ export async function getTokenAPIData(){
 }
 
 // add deployed token to the server list of LoadedTokens
-export async function registerLoadedToken(symbol, realID){
+export async function registerLoadedToken(symbol, realID, fakeID){
   const url = "https://uniswapmyapi.herokuapp.com/loadedTokens";
-  const data = {symbol: symbol, id: realID};
+  const data = {symbol: symbol, realID: realID, fakeID: fakeID};
   const options = {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},

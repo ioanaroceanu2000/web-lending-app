@@ -4,7 +4,7 @@ import PriceUpdate from './price_update';
 import Web3 from 'web3';
 import {Container, Row, Col, Navbar} from 'react-bootstrap';
 import logo from './logo.png';
-import {LiquidityPool_ABI, LiquidityPool_ADD, Exchange_ADD, Exchange_ABI, ERC20_ABI, Token_ABI, Token_BYTECODE } from './abis/abi'
+import {IRVAR_ABI, IRVAR_ADD,LiquidityPool_ABI, LiquidityPool_ADD, Exchange_ADD, Exchange_ABI, ERC20_ABI, Token_ABI, Token_BYTECODE } from './abis/abi'
 import {loadWeb3, getAccount, getUserDeposit, getUserLoanDetails, getTokenAPIPrice} from './utils.js';
 
 
@@ -30,18 +30,22 @@ class Balance extends Component {
     this.loadBlockchainData();
   }
 
+
   async loadBlockchainData(){
     const web3 = await loadWeb3();
     const account = await getAccount(web3);
-
     //initialise instance of LP contract
     const lpinstance = new web3.eth.Contract(LiquidityPool_ABI, LiquidityPool_ADD);
     this.setState({liquidityPool: lpinstance, userAddress: account, web3: web3});
-
     await this.renderBalance(web3);
   }
 
   async renderBalance(web3){
+    const ivarINstance = new this.state.web3.eth.Contract(IRVAR_ABI, IRVAR_ADD);
+    const tokenAdd = await this.state.web3.utils.toChecksumAddress("0xb6186735ed018f39b1c7dc07644227a5b28a68dd");
+    const tokenData = await ivarINstance.methods.tokens(tokenAdd).call();
+    console.log("This is what IVAR knows about YFI");
+    console.log(tokenData.token_address);
     const [depositValue, depFakeTokenID] = await getUserDeposit(web3,this.state.userAddress, this.state.liquidityPool);
     const [collateral, collFakeTokenID, owed, borrFakeTokenID] = await getUserLoanDetails(web3,this.state.userAddress, this.state.liquidityPool);
     this.setState({userDeposit: depositValue, userCollateral: collateral, userOwed: owed});
@@ -55,9 +59,10 @@ class Balance extends Component {
     let depositDollars = 0;
     if(this.state.depositedToken != ''){
       deposit = this.state.userDeposit;
-      depositToken = this.state.depositedToken;
-      let realID = this.props.tokens[depositToken].realID;
-      depositDollars = deposit*this.props.tokens[depositToken].price;
+      const fakeID = this.state.depositedToken.toLowerCase();
+      depositToken = this.props.tokens[fakeID]["symbol"];
+      let realID = this.props.tokens[fakeID].realID;
+      depositDollars = deposit*this.props.tokens[fakeID].price;
     }
 
     let collateral = '';
@@ -65,9 +70,10 @@ class Balance extends Component {
     let collDollars = 0;
     if(this.state.collateralToken != ''){
       collateral = this.state.userCollateral;
-      collToken = this.state.collateralToken;
-      let realID = this.props.tokens[collToken].realID;
-      collDollars = collateral*this.props.tokens[collToken].price;
+      const fakeID = this.state.collateralToken.toLowerCase();
+      collToken = this.props.tokens[fakeID].symbol;
+      let realID = this.props.tokens[fakeID].realID;
+      collDollars = collateral*this.props.tokens[fakeID].price;
     }
 
     let loan = '';
@@ -75,9 +81,10 @@ class Balance extends Component {
     let loanDollars = 0;
     if(this.state.owedToken != ''){
       loan = this.state.userOwed;
-      loanToken = this.state.owedToken;
-      let realID = this.props.tokens[loanToken].realID;
-      loanDollars = loan*this.props.tokens[loanToken].price;
+      const fakeID= this.state.owedToken.toLowerCase();
+      loanToken = this.props.tokens[fakeID].symbol;
+      let realID = this.props.tokens[fakeID].realID;
+      loanDollars = loan*this.props.tokens[fakeID].price;
     }
 
     return (
@@ -90,7 +97,7 @@ class Balance extends Component {
             <div className="action-name">Deposit:</div>
           </Col>
           <Col sm={8} >
-            <div className="deposit-value">${depositDollars}</div>
+            <div className="deposit-value">${depositDollars.toFixed(2)}</div>
             <div className="deposit-token">{deposit} {depositToken}</div>
           </Col>
         </Row>
@@ -109,7 +116,7 @@ class Balance extends Component {
             <div className="action-name">Collateral:</div>
           </Col>
           <Col sm={8} >
-            <div className="deposit-value">${collDollars}</div>
+            <div className="deposit-value">${collDollars.toFixed(2)}</div>
             <div className="deposit-token">{collateral} {collToken}</div>
           </Col>
         </Row>
@@ -118,7 +125,7 @@ class Balance extends Component {
             <div className="action-name">Owed:</div>
           </Col>
           <Col sm={8} >
-            <div className="deposit-value">${loanDollars}</div>
+            <div className="deposit-value">${loanDollars.toFixed(2)}</div>
             <div className="deposit-token">{loan} {loanToken}</div>
           </Col>
         </Row>

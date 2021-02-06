@@ -11,10 +11,9 @@ class PriceUpdate extends Component {
 
   constructor(props) {
     super(props);
+    // props: prices realID -> [symbol,price]
     this.state = {
-      isLoaded: false,
-      tokensLoaded: false,
-      pricesDict: {}, // this is a dictionary realID -> [name,price]
+      isLoaded: true,
       tokenIDs: [],
       seconds: 0,
       liquidityPool: null,
@@ -24,7 +23,6 @@ class PriceUpdate extends Component {
     };
   }
 
-  ///// UTILS
 
 
   // give token from owner to another account
@@ -38,99 +36,23 @@ class PriceUpdate extends Component {
     await tokenInstance.methods.balanceOf(account).call().then(res =>{ balance = res; });
   }
 
-  // give permission to contract to retreive tokens
-  async givePermissionToContract(account, privateKey, contractAddress, amount, tokenInstance, tokenAddress){
-    var nonce = await this.state.web3.eth.getTransactionCount(account);
-    const rawTx = {
-      nonce: nonce,
-      from: account,
-      to: tokenAddress,
-      gasLimit: this.state.web3.utils.toHex(200000),
-      data: tokenInstance.methods.approve(contractAddress, amount).encodeABI()
-    };
-    // private key of the second account
-    var privateKey = new Buffer(privateKey, 'hex');
-    var tx = new Transaction(rawTx);
-    tx.sign(privateKey);
-    var serializedTx = tx.serialize();
-    this.state.web3.eth.sendSignedTransaction('0x' + serializedTx.toString('hex')).on('receipt', console.log);
-  }
-
   componentWillMount(){
-    //this.leadBlockchainData();
-    this.uploadPrices();
+    this.loadBlockchainData();
   }
 
-  async uploadPrices(){
+  /*async uploadPrices(){
     const prices = await getTokenAPIPrices();
     this.setState({pricesDict: prices, isLoaded:true});
     this.props.handleChangedPrices(this.state.pricesDict);
-    console.log("Prices have been updated");
-  }
+  }*/
 
-  async updatePricesFromOwner(token, web3, account){
-
-    const privateKey = new Buffer('8ba9b5140d9b73afbdbb177247abe308242eaa55a955a52f7ebf2c2ca8aae99a', 'hex');
-    var nonce = await web3.eth.getTransactionCount(account);
-    const gasLimit = await web3.utils.toHex(2000000);
-    const data = await this.state.exchange.methods.updatePrice(token, 800).encodeABI();
-    const gasPrice = await web3.utils.toWei('100', 'gwei');
-    const gasPriceHex = await web3.utils.toHex(gasPrice);
-    const rawTx = {
-      nonce: nonce,
-      from: account,
-      to: Exchange_ADD,
-      gasLimit: gasLimit,
-      gasPrice: gasPriceHex,
-      chainId: 3,
-      data: data
-    };
-    // private key of the second account
-    var tx = new Transaction(rawTx, {'chain':'ropsten'});
-    tx.sign(privateKey);
-    var serializedTx = tx.serialize();
-    console.log("Send signed transaction on price update");
-    const receipt = await web3.eth.sendSignedTransaction('0x' + serializedTx.toString('hex'));
-    console.log(receipt);
-  }
-
-  async updateContractsPrices(token, web3, account){
-
-    const tokenAddress = await web3.utils.toChecksumAddress(token);
-    // update exchange prices
-    await window.ethereum.enable();
-    await this.state.exchange.methods.updatePrice(token, 800).send({from: account});
-    // update liquidity pool prices
-    await window.ethereum.enable();
-    await this.state.liquidityPool.methods.updateTokenPrice(token).send({from: account});
-    const priceExchange = await this.state.exchange.methods.getPrice(tokenAddress).call();
-    console.log("this is the current price in the exchange");
-    console.log(priceExchange);
-  }
-
-  async leadBlockchainData(){
+  async loadBlockchainData(){
     const web3 = new Web3(Web3.givenProvider || "http://localhost:8545");
     //this.setState({web3: web3});
     const network = await web3.eth.net.getNetworkType();
-    console.log("network:",network);
     const lpinstance = new web3.eth.Contract(LiquidityPool_ABI, LiquidityPool_ADD);
     const exinstance = new web3.eth.Contract(Exchange_ABI, Exchange_ADD);
-    this.setState({liquidityPool: lpinstance, exchange: exinstance});
-
-    // create the token (deploy and create pool in LP and exchange)
-    /*var address = await this.createToken(web3,'Weth',80, 70, 0, 7, 200, 1, 490);*/
-    const address = await web3.utils.toChecksumAddress('0xc91acB1Ad59E1d839bF3556A8Ec8d62129E24319');
-    console.log("This is the token's address");
-    console.log(address);
-    const account = await web3.utils.toChecksumAddress('0x614114ec0a5a6def6172d8cb210facb63d459c04');
-    await this.updatePricesFromOwner(address, web3, account);
-
-    console.log("NOw we are asking for the price");
-    await window.ethereum.enable();
-    const priceExchange = await this.state.exchange.methods.getPrice(address).call();
-    console.log("this is the current price in the exchange");
-    console.log(priceExchange);
-    //await this.updateContractsPrices(address, web3, account);
+    this.setState({liquidityPool: lpinstance, exchange: exinstance, web3: web3});
   }
 
 
@@ -186,10 +108,10 @@ class PriceUpdate extends Component {
   displayTokenDetails(tokenID){
     return(
       <Row className="token-details-row">
-        <Col lg={6} className="column symbol">{this.state.pricesDict[tokenID][0]}</Col>
+        <Col lg={6} className="column symbol">{this.props.prices[tokenID][0]}</Col>
         <Col lg={2} className="column symbol">3.15%</Col>
         <Col lg={2} className="column symbol">4.12%</Col>
-        <Col lg={2} className="column symbol">{this.state.pricesDict[tokenID][1].toFixed(4)}</Col>
+        <Col lg={2} className="column symbol">{this.props.prices[tokenID][1].toFixed(4)}</Col>
       </Row>
     )
   }
@@ -201,8 +123,6 @@ class PriceUpdate extends Component {
       noToLoad = this.props.loadedTokens.length;
     }
     for(i=0; i < noToLoad; i++){
-      console.log("this is one token to be added");
-      console.log(this.props.loadedTokens[i]);
       allTokensDetails.push(this.displayTokenDetails(this.props.loadedTokens[i]));
     }
     return allTokensDetails;
@@ -223,7 +143,7 @@ class PriceUpdate extends Component {
     const updatedTokenList = this.state.tokenIDs.map((token)=>{
       return(
               <li key={token.toString()}>
-                  {this.state.pricesDict[token][0]} : {this.state.pricesDict[token][1]}
+                  {this.props.prices[token][0]} : {this.props.prices[token][1]}
               </li>
           );
     });
