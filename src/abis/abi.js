@@ -1,4 +1,4 @@
-export const LiquidityPool_ADD = "0xFA86600059636526DD4c4E71f3ce21eE91F53a1B";
+export const LiquidityPool_ADD = "0xeb0fc01922D00C13FcE5623926a38941637611fA";
 
 export const LiquidityPool_ABI = [
   {
@@ -37,31 +37,6 @@ export const LiquidityPool_ABI = [
     "type": "event"
   },
   {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "oldPrice",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "newPrice",
-        "type": "uint256"
-      }
-    ],
-    "name": "PriceChange",
-    "type": "event"
-  },
-  {
     "inputs": [
       {
         "internalType": "address",
@@ -69,7 +44,7 @@ export const LiquidityPool_ABI = [
         "type": "address"
       }
     ],
-    "name": "tokensCoreData",
+    "name": "tokensData",
     "outputs": [
       {
         "internalType": "uint256",
@@ -77,23 +52,8 @@ export const LiquidityPool_ABI = [
         "type": "uint256"
       },
       {
-        "internalType": "string",
-        "name": "symbol",
-        "type": "string"
-      },
-      {
         "internalType": "uint256",
         "name": "utilisation",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "borrowIR",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "depositIR",
         "type": "uint256"
       },
       {
@@ -115,6 +75,31 @@ export const LiquidityPool_ABI = [
         "internalType": "uint256",
         "name": "totalCollateral",
         "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "exchangeable",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function",
+    "constant": true
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "trustedTkns",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
       }
     ],
     "stateMutability": "view",
@@ -189,11 +174,6 @@ export const LiquidityPool_ABI = [
   {
     "inputs": [
       {
-        "internalType": "string",
-        "name": "_symbol",
-        "type": "string"
-      },
-      {
         "internalType": "address",
         "name": "_token_address",
         "type": "address"
@@ -232,10 +212,34 @@ export const LiquidityPool_ABI = [
         "internalType": "uint256",
         "name": "_price",
         "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "truested",
+        "type": "bool"
       }
     ],
     "name": "createToken",
     "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "tryDiscardLoan",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
     "stateMutability": "nonpayable",
     "type": "function"
   },
@@ -256,41 +260,14 @@ export const LiquidityPool_ABI = [
     "inputs": [
       {
         "internalType": "address",
-        "name": "_addr",
+        "name": "token",
         "type": "address"
       }
     ],
-    "name": "isContract",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function",
-    "constant": true
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "tokenId",
-        "type": "address"
-      }
-    ],
-    "name": "getReserveBalance",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function",
-    "constant": true
+    "name": "checkExchangeability",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
     "inputs": [
@@ -372,11 +349,6 @@ export const LiquidityPool_ABI = [
         "internalType": "uint256",
         "name": "amount",
         "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "tokenId",
-        "type": "address"
       }
     ],
     "name": "switchDepositToCollateral",
@@ -486,41 +458,6 @@ export const LiquidityPool_ABI = [
         "type": "address"
       }
     ],
-    "name": "getUserDetails",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function",
-    "constant": true
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
-      }
-    ],
     "name": "getHealthFactor",
     "outputs": [
       {
@@ -548,7 +485,7 @@ export const LiquidityPool_ABI = [
   }
 ];
 
-export const Exchange_ADD = "0x7E6C6fA7620072806f1e20651AC080C7F765Ee49";
+export const Exchange_ADD = "0xd6ac21188A92304da8EF8B82598FD7c40BC0f3ca";
 
 export const Exchange_ABI = [
   {
@@ -575,6 +512,11 @@ export const Exchange_ABI = [
         "internalType": "string",
         "name": "symbol",
         "type": "string"
+      },
+      {
+        "internalType": "bool",
+        "name": "exchangeable",
+        "type": "bool"
       }
     ],
     "stateMutability": "view",
@@ -603,6 +545,39 @@ export const Exchange_ABI = [
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "switchToUnexchangable",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "isExchangeable",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function",
+    "constant": true
   },
   {
     "inputs": [
@@ -1066,11 +1041,6 @@ export const IRVAR_ABI = [
     "name": "tokens",
     "outputs": [
       {
-        "internalType": "string",
-        "name": "symbol",
-        "type": "string"
-      },
-      {
         "internalType": "address",
         "name": "token_address",
         "type": "address"
@@ -1125,11 +1095,6 @@ export const IRVAR_ABI = [
   },
   {
     "inputs": [
-      {
-        "internalType": "string",
-        "name": "_symbol",
-        "type": "string"
-      },
       {
         "internalType": "address",
         "name": "_token_address",
@@ -1224,6 +1189,31 @@ export const IRVAR_ABI = [
         "type": "uint256"
       }
     ],
+    "name": "depositInterestRate",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function",
+    "constant": true
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "id",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "utilisationRate",
+        "type": "uint256"
+      }
+    ],
     "name": "borrowInterestRate",
     "outputs": [
       {
@@ -1247,39 +1237,14 @@ export const IRVAR_ABI = [
         "internalType": "uint256",
         "name": "utilisationRate",
         "type": "uint256"
-      }
-    ],
-    "name": "depositInterestRate",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function",
-    "constant": true
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "id",
-        "type": "address"
       },
       {
         "internalType": "uint256",
-        "name": "utilisationRate",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "borrowIR",
+        "name": "deposit",
         "type": "uint256"
       }
     ],
-    "name": "depositInterestRate",
+    "name": "borrowInterestRate",
     "outputs": [
       {
         "internalType": "uint256",
@@ -1317,7 +1282,7 @@ export const IRVAR_ABI = [
   }
 ];
 
-export const IRVAR_ADD = "0x0998954bdA5c57baa44dD1069fD704Bfe6B587B6";
+export const IRVAR_ADD = "0xfe4eC60490C1c51019bB38d37650cb5ed2384cEA";
 
 export const Token_ABI = [
   {

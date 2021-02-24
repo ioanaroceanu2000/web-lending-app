@@ -21,6 +21,7 @@ class ActionButtons extends Component {
   }
 
 
+
   render() {
 
     return (
@@ -34,7 +35,7 @@ class ActionButtons extends Component {
         <Col><button className="button" style={{backgroundColor: this.state.buttonColors[4]}}  type="button radio" onClick={(e) => this.modifyStyle(4)}>Repay</button></Col>
       </Row>
       <hr className="hrButtons"/>
-      <Row> <ActionView type={this.state.actionType} tokens={this.props.tokens} prices={this.props.prices} web3={this.props.web3} liquidityPool={this.props.liquidityPool}/> </Row>
+      <Row> <ActionView handleLoadingTx={this.props.handleLoadingTx} type={this.state.actionType} tokens={this.props.tokens} prices={this.props.prices} web3={this.props.web3} liquidityPool={this.props.liquidityPool}/> </Row>
       </Container>
       </div>
     );

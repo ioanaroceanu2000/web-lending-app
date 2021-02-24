@@ -18,7 +18,7 @@ class App extends Component {
     this.state = {
       loading: true,
       prices: {}, //this is a dictionary realID -> [symbol,price]
-      toBeAdded: 'WETH',
+      toBeAdded: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
       web3: null,
       liquidityPool: null,
       exchange: null,
@@ -26,13 +26,16 @@ class App extends Component {
       realToFakeID: {}, // {realID: fakeID}
       allTokenIDs: [], // realIDs
       allTokenData: {}, // {realID: {symbol: -, utilisationRate: -, collateral: -, baseRate: -, slope1:-, slope2:-, sread: -, price: -}
+      connectedAccount: null,
+      transactionProgress: "Connected Address",
+      trustedToken: ["0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", "0x6b175474e89094c44da98b954eedeac495271d0f", "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48","0xdac17f958d2ee523a2206206994597c13d831ec7", "0x57ab1ec28d129707052df4df418d58a2d46d5f51", "0x4fabb145d64652a948d72533023f6e7a623c7c53","0x0000000000085d4780b73119b644ae5ecd22b376"],
+      balanceSwitch: true,
     };
   }
 
   async uploadPrices(){
-    const prices = await getTokenAPIPrices();
+    const prices = await getTokenAPIPrices(this.state.allTokenData);
     this.setState({prices: prices});
-    console.log("Prices Set in App");
   }
 
   async updatePricesProtocol(){
@@ -55,9 +58,11 @@ class App extends Component {
     // load web3
     const web3 = new Web3(Web3.givenProvider || "http://localhost:8545");
     const network = await web3.eth.net.getNetworkType();
-    this.setState({web3: web3})
+    const acc = await getAccount(web3);
+    this.setState({web3: web3, connectedAccount: acc})
+
     // load contracts
-    const lpinstance = new web3.eth.Contract(LiquidityPool_ABI, LiquidityPool_ADD);
+    const lpinstance = new web3.eth.Contract(LiquidityPool_ABI, LiquidityPool_ADD, {transactionConfirmationBlocks: 1});
     const exinstance = new web3.eth.Contract(Exchange_ABI, Exchange_ADD);
 
     //get all token's data from api
@@ -95,6 +100,10 @@ class App extends Component {
       tokenDetails.spread = tokenData.spread;
       let price = await getTokenAPIPrice(this.state.toBeAdded);
       tokenDetails.price = Math.round(price*1000);
+      tokenDetails.trusted = false;
+      if(this.state.trustedToken.includes(this.state.toBeAdded)){
+        tokenDetails.trusted = true;
+      }
       // get current connected account
       const user = await getAccount(this.state.web3);
       // deploy and add token to contracts
@@ -124,8 +133,6 @@ class App extends Component {
       let price = this.state.prices[realID][1];
       dict[fakeID] = {symbol: symbol, realID: realID, price: price};
     }
-    console.log("Tokens data to pass to Balances");
-    console.log(dict);
     return dict;
   }
 
@@ -164,6 +171,20 @@ class App extends Component {
   );
   }
 
+  handleLoadingTxThis(loading){
+    if(loading){
+      this.setState({transactionProgress: "Loading Transaction..."});
+    }else if(!loading){
+      this.setState({transactionProgress: "Connected Address"});
+      this.setState({balanceSwitch: !this.state.balanceSwitch});
+    }
+  }
+
+  checkbalanceSwitch(){
+    console.log('this is balance switch given');
+    console.log(this.state.balanceSwitch);
+    return this.state.balanceSwitch;
+  }
 
   render() {
 
@@ -196,17 +217,11 @@ class App extends Component {
           </button>
           <div className="collapse navbar-collapse justify-content-end" id="navbarCollapse">
             <ul className="navbar-nav">
-              <li className="nav-item active">
-                <a className="nav-link" href="#">Home <span className="sr-only">(current)</span></a>
+              <li>
+                <div className="connected-address"> {this.state.transactionProgress}</div>
               </li>
-              <li className="nav-item">
-                <a className="nav-link" href="#">Features</a>
-              </li>
-              <li className="nav-item">
-                <a className="nav-link" href="#">Pricing</a>
-              </li>
-              <li className="nav-item">
-                <a className="nav-link" href="#">Disabled</a>
+              <li>
+                <div className="address"> {this.state.connectedAccount}</div>
               </li>
             </ul>
           </div>
@@ -217,14 +232,14 @@ class App extends Component {
             <Col className="columns columns-left" lg={4}>
             <h3 style={{marginTop: "18px"}}>Your Balance</h3>
             <hr/>
-            <div>  <Balance tokens={tokensSymbolforFakeIDs}/> </div>
+            <div>  <Balance tokens={tokensSymbolforFakeIDs} switchBalance={this.checkbalanceSwitch()}/> </div>
             </Col>
 
             <Col sm={1}><br/></Col>
 
             <Col className="columns columns-right" lg={7}>
               <Container>
-                <ActionButtons tokens={listForAction} prices={pricesForAction} web3={this.state.web3} liquidityPool={this.state.liquidityPool}/>
+                <ActionButtons handleLoadingTx={this.handleLoadingTxThis.bind(this)} tokens={listForAction} prices={pricesForAction} web3={this.state.web3} liquidityPool={this.state.liquidityPool}/>
               </Container>
             </Col>
           </Row>

@@ -2,7 +2,7 @@ import React, {Component} from 'react';
 import {Container, Row, Col, Form} from 'react-bootstrap';
 import './DepositView.css';
 import {deposit, redeem,borrow,depositCollateral, getAccount} from './utils.js';
-
+/* global BigInt */
 
 
 
@@ -16,10 +16,10 @@ class ActionView extends Component {
     // props: prices fakeID->price
     super(props);
     this.state = {
-      toBeAdded: '0xb6186735ed018f39b1c7dc07644227a5b28a68dd', //->fakeID (YFI)
+      toBeAdded: '0x90F32b07Ac28E61baaA8D6956c0A8587e49Eba11', //->fakeID (YFI)
       amountToTransfer: 0,
       amountToTransferUSD: 0,
-      toBeAddedColl: '0xb6186735ed018f39b1c7dc07644227a5b28a68dd',
+      toBeAddedColl: '0x90F32b07Ac28E61baaA8D6956c0A8587e49Eba11',
       amountToTransferColl: 0,
       amountToTransferUSDColl: 0,
     };
@@ -33,8 +33,7 @@ class ActionView extends Component {
   handleChangeAmount_Coll = (e) => {
     this.setState({ amountToTransferColl: e.target.value });
     if(this.state.toBeAdded != ""){
-      console.log("now I am attempting to change value");
-      const price = this.props.prices[this.state.toBeAddedColl];
+      const price = this.props.prices[this.state.toBeAddedColl.toLowerCase()];
       const valueUSD = price*e.target.value;
       this.setState({amountToTransferUSDColl: valueUSD.toFixed(2)});
     }
@@ -47,24 +46,29 @@ class ActionView extends Component {
   handleChangeAmount = (e) => {
     this.setState({ amountToTransfer: e.target.value });
     if(this.state.toBeAdded != ""){
-      const price = this.props.prices[this.state.toBeAdded];
+      const price = this.props.prices[this.state.toBeAdded.toLowerCase()];
       const valueUSD = price*e.target.value;
       this.setState({amountToTransferUSD: valueUSD.toFixed(2)});
     }
   }
 
-
   async submitTransaction(){
     const userAccount = await getAccount(this.props.web3);
+    const decimals = BigInt("1000000000000000");
+    const amountToTransfer = BigInt(this.state.amountToTransfer*1000) * decimals;
+    this.props.handleLoadingTx(true);
+    console.log("Started Transaction");
     if(this.props.type == "Deposit"){
-      await deposit(userAccount, this.state.amountToTransfer, this.state.toBeAdded, this.props.web3, this.props.liquidityPool);
+      await deposit(userAccount, amountToTransfer, this.state.toBeAdded, this.props.web3, this.props.liquidityPool);
     }else if(this.props.type == "Redeem"){
-      await redeem(userAccount, this.state.amountToTransfer, this.state.toBeAdded, this.props.web3, this.props.liquidityPool);
+      await redeem(userAccount, amountToTransfer, this.state.toBeAdded, this.props.web3, this.props.liquidityPool);
     }else if(this.props.type == "Borrow"){
-      await borrow(userAccount, this.state.amountToTransfer, this.state.toBeAdded, this.props.web3, this.props.liquidityPool);
+      await borrow(userAccount, amountToTransfer, this.state.toBeAdded, this.props.web3, this.props.liquidityPool);
     }else if(this.props.type == "Collateral"){
-      await depositCollateral(userAccount, this.state.amountToTransfer, this.state.toBeAdded, this.props.web3, this.props.liquidityPool);
+      await depositCollateral(userAccount, amountToTransfer, this.state.toBeAdded, this.props.web3, this.props.liquidityPool);
     }
+    console.log("Finished Transaction");
+    this.props.handleLoadingTx(false);
   }
 
   options(size, coll){

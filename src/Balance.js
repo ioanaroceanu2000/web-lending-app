@@ -12,6 +12,7 @@ class Balance extends Component {
 
   constructor(props) {
     // props should be list of token's symbols
+    // props switchBalance = true/false
     super(props);
     this.state = {
       isLoaded: false,
@@ -24,6 +25,7 @@ class Balance extends Component {
       owedToken:'',
       liquidityPool: null,
       web3: null,
+      reloadedBalance: false,
     };
   }
 
@@ -31,12 +33,23 @@ class Balance extends Component {
     this.loadBlockchainData();
   }
 
+  componentDidUpdate(){
+    console.log(this.state.reloadedBalance);
+    console.log(this.props.switchBalance);
+    if(this.state.userAddress!=null && this.state.web3 != null && this.state.reloadedBalance == this.props.switchBalance){
+      console.log("update");
+      this.renderBalance(this.state.userAddress);
+      this.setState({reloadedBalance: !this.props.switchBalance});
+    }
+  }
+
 
   async loadBlockchainData(){
+    console.log("mount");
     const web3 = await loadWeb3();
     const account = await getAccount(web3);
     //initialise instance of LP contract
-    const lpinstance = new web3.eth.Contract(LiquidityPool_ABI, LiquidityPool_ADD);
+    const lpinstance = new web3.eth.Contract(LiquidityPool_ABI, LiquidityPool_ADD, {transactionConfirmationBlocks: 1});
     this.setState({liquidityPool: lpinstance, userAddress: account, web3: web3});
     await this.renderBalance(web3);
     this.setState({isLoaded: true});
@@ -46,16 +59,15 @@ class Balance extends Component {
     const ivarINstance = new this.state.web3.eth.Contract(IRVAR_ABI, IRVAR_ADD);
     const tokenAdd = await this.state.web3.utils.toChecksumAddress("0xb6186735ed018f39b1c7dc07644227a5b28a68dd");
     const tokenData = await ivarINstance.methods.tokens(tokenAdd).call();
-    console.log("This is what IVAR knows about YFI");
-    console.log(tokenData.token_address);
-    const [depositValue, depFakeTokenID] = await getUserDeposit(web3,this.state.userAddress, this.state.liquidityPool);
-    const loanDetils = await getUserLoanDetails(web3,this.state.userAddress, this.state.liquidityPool);
+    const [depositValue, depFakeTokenID] = await getUserDeposit(this.state.web3,this.state.userAddress, this.state.liquidityPool);
+    const loanDetils = await getUserLoanDetails(this.state.web3,this.state.userAddress, this.state.liquidityPool);
     const collateral = loanDetils[0];
     const collFakeTokenID = loanDetils[1];
     const owed = loanDetils[2];
     const borrFakeTokenID = loanDetils[3];
     this.setState({userDeposit: depositValue, userCollateral: collateral, userOwed: owed});
     this.setState({depositedToken: depFakeTokenID, collateralToken: collFakeTokenID, owedToken: borrFakeTokenID});
+    console.log("Finished loading");
   }
 
   render() {
@@ -67,10 +79,13 @@ class Balance extends Component {
       let depositDollars = 0;
       if(this.state.depositedToken != ''){
         deposit = this.state.userDeposit;
-        const fakeID = this.state.depositedToken.toLowerCase();
+        var fakeID = this.state.depositedToken;
+        if(this.props.tokens[fakeID] == null){
+          fakeID = fakeID.toLowerCase();
+        }
         depositToken = this.props.tokens[fakeID]["symbol"];
         let realID = this.props.tokens[fakeID].realID;
-        depositDollars = deposit*this.props.tokens[fakeID].price;
+        depositDollars = Number(deposit)*this.props.tokens[fakeID].price;
       }
 
       let collateral = '';
@@ -78,10 +93,14 @@ class Balance extends Component {
       let collDollars = 0;
       if(this.state.collateralToken != ''){
         collateral = this.state.userCollateral;
-        const fakeID = this.state.collateralToken.toLowerCase();
+        var fakeID = this.state.collateralToken;
+        if(this.props.tokens[fakeID] == null){
+          fakeID = fakeID.toLowerCase();
+        }
+        console.log(fakeID);
         collToken = this.props.tokens[fakeID].symbol;
         let realID = this.props.tokens[fakeID].realID;
-        collDollars = collateral*this.props.tokens[fakeID].price;
+        collDollars = Number(collateral)*this.props.tokens[fakeID].price;
       }
 
       let loan = '';
@@ -89,10 +108,13 @@ class Balance extends Component {
       let loanDollars = 0;
       if(this.state.owedToken != ''){
         loan = this.state.userOwed;
-        const fakeID= this.state.owedToken.toLowerCase();
+        var fakeID = this.state.owedToken;
+        if(this.props.tokens[fakeID] == null){
+          fakeID = fakeID.toLowerCase();
+        }
         loanToken = this.props.tokens[fakeID].symbol;
         let realID = this.props.tokens[fakeID].realID;
-        loanDollars = loan*this.props.tokens[fakeID].price;
+        loanDollars = Number(loan)*this.props.tokens[fakeID].price;
       }
 
       return (

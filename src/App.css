@@ -97,3 +97,17 @@ div {
     padding: 8px;
     background-color: #FF66C4;
 }
+
+.address{
+  color:white;
+  padding: 8px;
+  font-weight: bold;
+}
+
+.connected-address{
+  border-radius: 5px;
+  color:white;
+  padding: 8px;
+  font-weight: bold;
+  background-color: #302f75;
+}

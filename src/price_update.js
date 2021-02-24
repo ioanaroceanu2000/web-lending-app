@@ -110,8 +110,6 @@ class PriceUpdate extends Component {
   }
 
   displayTokenDetails(tokenID){
-    console.log(tokenID);
-    console.log(this.state.interestRates);
     const borrowIR = this.state.interestRates[tokenID].borrowIR;
     const depositIR = this.state.interestRates[tokenID].depositIR;
     return(
