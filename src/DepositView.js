@@ -1,7 +1,7 @@
 import React, {Component} from 'react';
 import {Container, Row, Col, Form} from 'react-bootstrap';
 import './DepositView.css';
-import {deposit, redeem,borrow,depositCollateral, getAccount} from './utils.js';
+import {deposit, redeem,borrow,depositCollateral,collateralFromDeposit, repay, getAccount} from './utils.js';
 /* global BigInt */
 
 
@@ -16,10 +16,10 @@ class ActionView extends Component {
     // props: prices fakeID->price
     super(props);
     this.state = {
-      toBeAdded: '0x90F32b07Ac28E61baaA8D6956c0A8587e49Eba11', //->fakeID (YFI)
+      toBeAdded: '0x690C32B710EeC4ab0C12e5290E2a38137174d13a', //->fakeID (YFI)
       amountToTransfer: 0,
       amountToTransferUSD: 0,
-      toBeAddedColl: '0x90F32b07Ac28E61baaA8D6956c0A8587e49Eba11',
+      toBeAddedColl: '0x690C32B710EeC4ab0C12e5290E2a38137174d13a',
       amountToTransferColl: 0,
       amountToTransferUSDColl: 0,
     };
@@ -33,7 +33,7 @@ class ActionView extends Component {
   handleChangeAmount_Coll = (e) => {
     this.setState({ amountToTransferColl: e.target.value });
     if(this.state.toBeAdded != ""){
-      const price = this.props.prices[this.state.toBeAddedColl.toLowerCase()];
+      const price = this.props.prices[this.state.toBeAddedColl];
       const valueUSD = price*e.target.value;
       this.setState({amountToTransferUSDColl: valueUSD.toFixed(2)});
     }
@@ -46,7 +46,7 @@ class ActionView extends Component {
   handleChangeAmount = (e) => {
     this.setState({ amountToTransfer: e.target.value });
     if(this.state.toBeAdded != ""){
-      const price = this.props.prices[this.state.toBeAdded.toLowerCase()];
+      const price = this.props.prices[this.state.toBeAdded];
       const valueUSD = price*e.target.value;
       this.setState({amountToTransferUSD: valueUSD.toFixed(2)});
     }
@@ -66,12 +66,14 @@ class ActionView extends Component {
       await borrow(userAccount, amountToTransfer, this.state.toBeAdded, this.props.web3, this.props.liquidityPool);
     }else if(this.props.type == "Collateral"){
       await depositCollateral(userAccount, amountToTransfer, this.state.toBeAdded, this.props.web3, this.props.liquidityPool);
+    }else if(this.props.type == "Repay"){
+      await repay(userAccount, amountToTransfer, this.state.toBeAdded, this.props.web3, this.props.liquidityPool);
     }
     console.log("Finished Transaction");
     this.props.handleLoadingTx(false);
   }
 
-  options(size, coll){
+  options(size){
     var tokenOptions = [];
     var i =0;
     const len = this.props.tokens.length;
@@ -81,15 +83,6 @@ class ActionView extends Component {
       tokenOptions.push(<option value={fakeId}>{symbol}</option>);
     }
     // this is for the second form from the collateral view
-    if(coll){
-      return(
-        <Form.Group controlId="exampleForm.ControlSelect1" className="topTokenInput">
-          <Form.Control size={size} as="select" className="tokenInput" onChange={ this.handleChangeSelectedToken_Coll }>
-            {tokenOptions}
-          </Form.Control>
-        </Form.Group>
-      );
-    }
     return (
     <Form.Group controlId="exampleForm.ControlSelect1" className="topTokenInput">
       <Form.Control size={size} as="select" className="tokenInput" onChange={ this.handleChangeSelectedToken }>
@@ -99,82 +92,52 @@ class ActionView extends Component {
   );
   }
 
+
+
   render() {
-    const optionsLg = this.options("lg", false);
-    const optionsSm = this.options("sm", false);
-    const optionsSmColl = this.options("sm", true);
+    const optionsLg = this.options("lg");
+    const optionsSm = this.options("sm");
     if(this.props.type == "Collateral"){
       return (
         <div className="container">
         <div>
         <Container>
           <Row>
-          <h4>Add Collateral from wallet</h4>
+          <div><br/></div>
           </Row>
+          <Row>
+          <h3>Add Collateral from wallet</h3>
+          </Row>
+          <br/>
 
           <Row>
             <Form className="inputField">
               <Form.Group controlId="formBasicEmail" className="topValueInput">
-                <Form.Control size="sm" type="email" placeholder="e.g 450" className="valueInput" onChange={ this.handleChangeAmount }/>
+                <Form.Control size="lg" type="email" placeholder="e.g 450" className="valueInput" onChange={ this.handleChangeAmount }/>
               </Form.Group>
-              {optionsSm}
+              {optionsLg}
             </Form>
           </Row>
 
           <Row>
             <Form className="inputField">
               <Form.Group controlId="formBasicEmail" className="topValueInput">
-                <Form.Control readOnly size="sm" type="email" placeholder={this.state.amountToTransferUSD} className="valueInput"/>
+                <Form.Control readOnly size="lg" type="email" placeholder={this.state.amountToTransferUSD} className="valueInput"/>
               </Form.Group>
 
             <Form.Group className="topTokenInput">
-              <Form.Control size="sm" className="tokenInput" placeholder="USD" disabled />
+              <Form.Control size="lg" className="tokenInput" placeholder="USD" disabled />
             </Form.Group>
             </Form>
           </Row>
 
           <Row>
-            <button type="button" className="collateral-submit" onClick={this.submitTransaction.bind(this)}>Submit Transaction</button>
+            <button type="button" className="submitButton" onClick={this.submitTransaction.bind(this)}>Submit Transaction</button>
           </Row>
 
         </Container>
         </div>
 
-        <hr/>
-
-        <div>
-        <Container>
-          <Row>
-          <h4>Add Collateral from deposit</h4>
-          </Row>
-
-          <Row>
-            <Form className="inputField">
-              <Form.Group controlId="formBasicEmail" className="topValueInput">
-                <Form.Control size="sm" type="email" placeholder="e.g 450" className="valueInput" onChange={ this.handleChangeAmount_Coll }/>
-              </Form.Group>
-              {optionsSm}
-            </Form>
-          </Row>
-
-          <Row>
-            <Form className="inputField">
-              <Form.Group controlId="formBasicEmail" className="topValueInput">
-                <Form.Control readOnly size="sm" type="email" placeholder={this.state.amountToTransferUSDColl.toString()} className="valueInput"/>
-              </Form.Group>
-
-            <Form.Group className="topTokenInput">
-              <Form.Control size="sm" className="tokenInput" placeholder="USD" disabled />
-            </Form.Group>
-            </Form>
-          </Row>
-
-          <Row>
-            <button type="button" className="collateral-submit">Submit Transaction</button>
-          </Row>
-
-        </Container>
-        </div>
         </div>
       );
     }else{

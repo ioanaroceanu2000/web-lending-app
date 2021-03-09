@@ -1,0 +1,32 @@
+.token-details{
+  color: black;
+  border-radius: 5px;
+  margin-top: -40px;
+  margin-bottom: 10px;
+}
+
+.token-details.last{
+  margin-bottom: 30px;
+}
+
+.bar{
+  border-radius: 5px;
+  background-color: #FF66C4;
+  height: 24px;
+}
+
+.rowns{
+  width: 20%;
+}
+
+.column{
+  padding: 0px;
+  margin: 0px;
+}
+
+.columnBar{
+  background-color: rgba(48, 47, 117, .3);
+  border-radius: 5px;
+  padding: 0px;
+  margin: 0px;
+}

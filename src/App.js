@@ -38,17 +38,6 @@ class App extends Component {
     this.setState({prices: prices});
   }
 
-  async updatePricesProtocol(){
-    const account = await getAccount(this.state.web3);
-    var i;
-    for(i = 0; i < this.state.addedTokenIDs.length; i++){
-      const realID = this.state.addedTokenIDs[i];
-      const fakeID = this.state.realToFakeID[realID];
-      await updateExchangePricesFromOwner(this.state.web3, this.state.exchange, fakeID, this.state.prices[realID][1]);
-      await updateLiquidityPoolPrices(this.state.web3, this.state.liquidityPool, fakeID, account);
-    }
-  }
-
 
   componentWillMount(){
     this.loadBlockchainData();
@@ -92,6 +81,9 @@ class App extends Component {
       let tokenDetails = {};
       const tokenData = this.state.allTokenData[this.state.toBeAdded];
       tokenDetails.symbol = tokenData.symbol;
+      console.log("UR");
+      console.log(tokenData.utilisationRate);
+      console.log(Math.round(tokenData.utilisationRate));
       tokenDetails.utilisation = Math.round(tokenData.utilisationRate);
       tokenDetails.collateral = Math.round(tokenData.collateral);
       tokenDetails.baseRate = tokenData.baseRate;
@@ -134,6 +126,7 @@ class App extends Component {
       dict[fakeID] = {symbol: symbol, realID: realID, price: price};
     }
     return dict;
+    this.uploadPrices();
   }
 
   //// RENDER COMPONENTS

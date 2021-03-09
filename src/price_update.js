@@ -6,6 +6,7 @@ import {LiquidityPool_ABI, LiquidityPool_ADD, Exchange_ADD, Exchange_ABI, ERC20_
 import './price_update.css';
 import {getTokenAPIPrices} from './priceUpdate.js';
 import {getTokenRates} from './utils.js';
+import LiquidityView from './LiquidityView.js';
 
 
 class PriceUpdate extends Component {
@@ -23,7 +24,8 @@ class PriceUpdate extends Component {
       exchange: null,
       web3: null,
       noLoadedTokens: 50,
-      interestRates: {} // realID -> {borrowIR, depositIR}
+      interestRates: {}, // realID -> {borrowIR, depositIR}
+      showLiquidity: {},
     };
   }
 
@@ -113,13 +115,40 @@ class PriceUpdate extends Component {
     const borrowIR = this.state.interestRates[tokenID].borrowIR;
     const depositIR = this.state.interestRates[tokenID].depositIR;
     return(
+      <div>
       <Row className="token-details-row">
-        <Col lg={6} className="column symbol">{this.props.prices[tokenID][0]}</Col>
+        <Col lg={6} className="column symbol"><button type="button" className="show-liquidity" onClick={(e) => this.switchShowLiquidity(tokenID)}>{this.props.prices[tokenID][0]}</button>
+        </Col>
         <Col lg={2} className="column symbol">{depositIR/100}%</Col>
         <Col lg={2} className="column symbol">{borrowIR/100}%</Col>
         <Col lg={2} className="column symbol">{this.props.prices[tokenID][1].toFixed(4)}</Col>
       </Row>
+      {this.showLiquidity(tokenID)}
+      </div>
     )
+  }
+
+  switchShowLiquidity(tokenID){
+    const fakeID = this.props.realToFakeID[tokenID];
+    var newShowLiq = { ...this.state.showLiquidity}; //create a new copy
+    if(this.state.showLiquidity[fakeID] == null || this.state.showLiquidity[fakeID] == true){
+      newShowLiq[fakeID] = false;
+      this.setState({showLiquidity: newShowLiq});
+    }else if(this.state.showLiquidity[fakeID] == false){
+      newShowLiq[fakeID] = true;
+      this.setState({showLiquidity: newShowLiq});
+    }
+  }
+
+  showLiquidity(tokenID){
+    const fakeID = this.props.realToFakeID[tokenID];
+    if(this.state.showLiquidity[fakeID] == false){
+      return (
+        <Row className="liquidity-details">
+        <Col><LiquidityView fakeID={fakeID} symbol={this.props.prices[tokenID][0]}/></Col>
+        </Row>
+      );
+    }
   }
 
   displayAllTokenDetails(noToLoad){

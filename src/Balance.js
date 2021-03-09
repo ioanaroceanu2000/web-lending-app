@@ -33,11 +33,8 @@ class Balance extends Component {
     this.loadBlockchainData();
   }
 
-  componentDidUpdate(){
-    console.log(this.state.reloadedBalance);
-    console.log(this.props.switchBalance);
+  componentDidUpdate(prevState){
     if(this.state.userAddress!=null && this.state.web3 != null && this.state.reloadedBalance == this.props.switchBalance){
-      console.log("update");
       this.renderBalance(this.state.userAddress);
       this.setState({reloadedBalance: !this.props.switchBalance});
     }
@@ -45,7 +42,6 @@ class Balance extends Component {
 
 
   async loadBlockchainData(){
-    console.log("mount");
     const web3 = await loadWeb3();
     const account = await getAccount(web3);
     //initialise instance of LP contract
@@ -77,6 +73,7 @@ class Balance extends Component {
       let deposit = '';
       let depositToken = 'NO DEPOSIT';
       let depositDollars = 0;
+      console.log(this.state.depositedToken)
       if(this.state.depositedToken != ''){
         deposit = this.state.userDeposit;
         var fakeID = this.state.depositedToken;

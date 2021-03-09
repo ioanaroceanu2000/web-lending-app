@@ -51,3 +51,27 @@
     margin-top: 2%;
     background-color: #FF66C4;
 }
+
+.show-liquidity{
+  border: none;
+  border-radius: 5px;
+  color: white;
+  width: 80px;
+  font-size: 100%;
+  text-align: center;
+  border-color: #302f75 !important;
+  outline-color: #302f75 !important;
+  background-color: #302f75;
+}
+
+.show-liquidity:hover{
+  border: none;
+  color: white;
+  border-radius: 5px;
+  width: 80px;
+  font-size: 100%;
+  text-align: center;
+  border-color: #FF66C4 !important;
+  outline-color: #FF66C4 !important;
+  background-color: #FF66C4;
+}

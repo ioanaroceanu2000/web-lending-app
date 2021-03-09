@@ -18,52 +18,55 @@ export async function getAccount(web3){
   return connectedAccount[0];
 }
 
-// [amount, token]
+// [amount, tkn]
 export async function getUserDeposit(web3, userAdd, liquidityPool){
   console.log("get user's deposit details");
   await window.ethereum.enable();
-  const userDetails = await liquidityPool.methods.usersBalance(userAdd).call();
-  if( !web3.utils.toBN(userDetails.tokenDeposited).isZero()){
-    console.log(userDetails.tokenDeposited);
-    const deposit = await liquidityPool.methods.getCummulatedInterestDeposit(userAdd).call();
+  const userDetails = await liquidityPool.methods.uBal(userAdd).call();
+  if( !web3.utils.toBN(userDetails.tknDeposited).isZero()){
+    const ivar = new web3.eth.Contract(IRVAR_ABI, IRVAR_ADD);
+    const deposit = await ivar.methods.getCumIrDeposit(userDetails.tknDeposited, userDetails.cummulated_dep, userDetails.init_ir_deposit).call();
     const actualDeposit = Number(BigInt(deposit) / BigInt(10n ** 15n))/1000;
-    return [actualDeposit, userDetails.tokenDeposited];
+    return [actualDeposit, userDetails.tknDeposited];
   }
   return [0,''];
 
 }
 
-//(collateral, collToken, owed, borrToken)
+//(collateral, colltkn, owed, borrtkn)
 export async function getUserLoanDetails(web3, userAdd, liquidityPool){
   await window.ethereum.enable();
-  const userDetails = await liquidityPool.methods.usersBalance(userAdd).call();
+  const userDetails = await liquidityPool.methods.uBal(userAdd).call();
   // user either has both coll and loan or just collateral or none
   // user cannot havo only loan
 
-  if(!web3.utils.toBN(userDetails.tokenCollateralised).isZero() &&  !web3.utils.toBN(userDetails.tokenBorrowed).isZero(userDetails.tokenBorrowed)){
-    const owed = await liquidityPool.methods.getCummulatedInterestLoan(userAdd).call();
+  if(!web3.utils.toBN(userDetails.tknCollateralised).isZero() &&  !web3.utils.toBN(userDetails.tknBorrowed).isZero(userDetails.tknBorrowed)){
+    const ivar = new web3.eth.Contract(IRVAR_ABI, IRVAR_ADD);
+    const owed = await ivar.methods.getCumIrLoan(userDetails.tknBorrowed, userDetails.cummulated_borr, userDetails.init_ir_borrow).call();
     const actualColl = Number(BigInt(userDetails.collateralAmount) / BigInt(10n ** 15n))/1000;
     const actualowed = Number(BigInt(owed) / BigInt(10n ** 15n))/1000;
-    const loanDetails = [actualColl,userDetails.tokenCollateralised,  actualowed, userDetails.tokenBorrowed];
+    const loanDetails = [actualColl,userDetails.tknCollateralised,  actualowed, userDetails.tknBorrowed];
     return loanDetails;
-  }else if(!web3.utils.toBN(userDetails.tokenCollateralised).isZero()){
+  }else if(!web3.utils.toBN(userDetails.tknCollateralised).isZero()){
     const actualColl = Number(BigInt(userDetails.collateralAmount) / BigInt(10n ** 15n))/1000;
-    return [actualColl, userDetails.tokenCollateralised, 0, ''];
+    return [actualColl, userDetails.tknCollateralised, 0, ''];
   }else{
     return [0,'',0,''];
   }
 }
 
-export async function getTokenRates(web3, tokenAddress, liquidityPool){
-  console.log(tokenAddress);
-  const tokenAdd = await web3.utils.toChecksumAddress(tokenAddress);
+export async function getTokenRates(web3, tknAddress, liquidityPool){
+  console.log(tknAddress);
+  const tknAdd = await web3.utils.toChecksumAddress(tknAddress);
 
-  const tokenData = await liquidityPool.methods.tokensData(tokenAdd).call();
-  const utilisation = tokenData.utilisation;
+  const tknData = await liquidityPool.methods.tknsData(tknAdd).call();
+  const utilisation = tknData.utilisation;
+  console.log(utilisation);
+  console.log(tknAddress);
 
   const ivarInstance = new web3.eth.Contract(IRVAR_ABI, IRVAR_ADD);
-  const borrowIR = await ivarInstance.methods.borrowInterestRate(tokenAdd,utilisation).call();
-  const depositIR = await ivarInstance.methods.depositInterestRate(tokenAdd,utilisation).call();
+  const borrowIR = await ivarInstance.methods.borrowInterestRate(tknAdd,utilisation).call();
+  const depositIR = await ivarInstance.methods.depositInterestRate(tknAdd,utilisation).call();
 
   return [borrowIR, depositIR];
 }
@@ -73,7 +76,7 @@ export async function getTokenRates(web3, tokenAddress, liquidityPool){
 
 //// CHAIN ACTIONS HELPERS
 
-// deploy the code for a token and return its address
+// deploy the code for a tkn and return its address
 export async function depolyToken(name, symbol, web3, userAddress){
   //create contract and depoly
   var contract = new web3.eth.Contract(Token_ABI);
@@ -85,63 +88,62 @@ export async function depolyToken(name, symbol, web3, userAddress){
 
   contract.options.data = Token_BYTECODE;
 
-  var TokenTx = contract.deploy({
+  var tknTx = contract.deploy({
       arguments: [name, symbol]
   });
   await window.ethereum.enable();
-  var tokenAddress;
-  console.log("Deploy token");
-  var instance = await TokenTx.send({
+  var tknAddress;
+  console.log("Deploy tkn");
+  var instance = await tknTx.send({
       from: account,
       gasLimit: 1500000,
       gasPrice: gasPriceHex,
       value: 0
   }).then(function(newContractInstance){
-      tokenAddress = newContractInstance.options.address; // instance with the new contract address
+      tknAddress = newContractInstance.options.address; // instance with the new contract address
   });
 
-  return tokenAddress;
+  return tknAddress;
 }
 
-export async function createToken(userAccount, web3, tokenDetails, exchange, liquidityPool){
-  var address = await depolyToken(tokenDetails.symbol,tokenDetails.symbol,web3, userAccount);
+export async function createToken(userAccount, web3, tknDetails, exchange, liquidityPool){
+  var address = await depolyToken(tknDetails.symbol,tknDetails.symbol,web3, userAccount);
   // create pool in exchange
   const account = await web3.utils.toChecksumAddress(userAccount);
   await window.ethereum.enable();
   console.log("Create the pool in Exchange");
-  await exchange.methods.createPool(address,tokenDetails.price,tokenDetails.symbol).send({from: account});
-  // create token in LiquidityPool
+  await exchange.methods.createPool(address,tknDetails.price,tknDetails.symbol).send({from: account});
+  // create tkn in LiquidityPool
   await window.ethereum.enable();
-  console.log("Create the pool in LP");
-  await liquidityPool.methods.createToken(address,
-    tokenDetails.utilisation,
-    tokenDetails.collateral,
-    tokenDetails.baseRate,
-    tokenDetails.slope1,
-    tokenDetails.slope2,
-    tokenDetails.spread,
-    tokenDetails.price, tokenDetails.trusted).send({from: account});
+  await liquidityPool.methods.createtkn(address,
+    tknDetails.utilisation,
+    tknDetails.collateral,
+    tknDetails.baseRate,
+    tknDetails.slope1,
+    tknDetails.slope2,
+    tknDetails.spread,
+    tknDetails.price, tknDetails.trusted).send({from: account});
   return address;
 }
 
-// give permission to contract to retreive tokens
-async function givePermissionToContract(web3, account, amount, tokenAddress){
+// give permission to contract to retreive tkns
+async function givePermissionToContract(web3, account, amount, tknAddress){
   const weiAmount = amount;
-  const tokenAdd = await web3.utils.toChecksumAddress(tokenAddress);
-  const tokenInstance = new web3.eth.Contract(ERC20_ABI, tokenAddress);
+  const tknAdd = await web3.utils.toChecksumAddress(tknAddress);
+  const tknInstance = new web3.eth.Contract(ERC20_ABI, tknAddress);
   await window.ethereum.enable();
-  await tokenInstance.methods.approve(LiquidityPool_ADD, weiAmount).send({from: account});
+  await tknInstance.methods.approve(LiquidityPool_ADD, weiAmount).send({from: account});
 }
 
-// updates prices in exchange for given token from the owner address
-export async function updateExchangePricesFromOwner(web3, exchange, token, price){
+// updates prices in exchange for given tkn from the owner address
+export async function updateExchangePricesFromOwner(web3, exchange, tkn, price){
 
   const account = await web3.utils.toChecksumAddress('0x614114ec0a5a6def6172d8cb210facb63d459c04');
   const privateKey = new Buffer('8ba9b5140d9b73afbdbb177247abe308242eaa55a955a52f7ebf2c2ca8aae99a', 'hex');
   var nonce = await web3.eth.getTransactionCount(account);
   const gasLimit = await web3.utils.toHex(2000000);
-  const priceRounded = Math.round(price*10);
-  const data = await exchange.methods.updatePrice(token, priceRounded).encodeABI();
+  const priceRounded = Math.round(price*1000);
+  const data = await exchange.methods.updatePrice(tkn, priceRounded).encodeABI();
   const gasPrice = await web3.utils.toWei('100', 'gwei');
   const gasPriceHex = await web3.utils.toHex(gasPrice);
   const rawTx = {
@@ -162,12 +164,12 @@ export async function updateExchangePricesFromOwner(web3, exchange, token, price
   console.log(receipt);
 }
 
-// updates prices in liquidity pool for given token
-export async function updateLiquidityPoolPrices(web3, liquidityPool, token, account){
+// updates prices in liquidity pool for given tkn
+export async function updateLiquidityPoolPrices(web3, liquidityPool, tkn, account){
 
-  const tokenAddress = await web3.utils.toChecksumAddress(token);
+  const tknAddress = await web3.utils.toChecksumAddress(tkn);
   await window.ethereum.enable();
-  await liquidityPool.methods.updateTokenPrice(token).send({from: account});
+  await liquidityPool.methods.updatetknPrice(tkn).send({from: account});
 }
 
 
@@ -176,98 +178,176 @@ export async function updateLiquidityPoolPrices(web3, liquidityPool, token, acco
 
 export async function deposit(userAccount, amount, fakeID, web3, liquidityPool){
 
-  const tokenAdd = await web3.utils.toChecksumAddress(fakeID);
-  await givePermissionToContract(web3, userAccount, amount, tokenAdd);
+  const tknAdd = await web3.utils.toChecksumAddress(fakeID);
+  await givePermissionToContract(web3, userAccount, amount, tknAdd);
   console.log("TRY DEPOSIT");
   const weiAmount = amount;
   await window.ethereum.enable();
-  await liquidityPool.methods.deposit(userAccount, weiAmount, tokenAdd).send({from: userAccount}).on('error', function(error){
-    alert("Transaction Failed: You are not allowed to have deposits in more than one token.");
-  });
+
+  var txHash = null;
+  try{
+    await liquidityPool.methods.deposit(userAccount, weiAmount, tknAdd).send({from: userAccount}).on('transactionHash', function(hash){
+        txHash = hash;
+      })
+  }catch(err){
+    if( txHash != null){
+      var str = " View on Etherscan. https://ropsten.etherscan.io/tx/"+txHash;
+      alert("Transaction FAILED! "+ str);
+    }else{
+      alert("Transaction FAILED! Rejected from account");
+    }
+    return;
+  }
+
   console.log("Deposit DONE");
+  var str = " View on Etherscan. https://ropsten.etherscan.io/tx/"+txHash;
+  alert("Transaction successfull! "+ str);
+
+
 }
 
 export async function borrow(userAccount, amount, fakeID, web3, liquidityPool){
 
-  const tokenAdd = await web3.utils.toChecksumAddress(fakeID);
+  const tknAdd = await web3.utils.toChecksumAddress(fakeID);
   console.log("TRY Borrow");
   const weiAmount = amount;
   await window.ethereum.enable();
-  // borrow(address payable user, uint amount, address tokenId)
-  await liquidityPool.methods.borrow(userAccount, weiAmount, tokenAdd).send({from: userAccount}).on('error', function(error){
-    alert("Transaction Failed: You either already have a loan in a different token OR you have overborrowed");
-  });
+  web3.eth.handleRevert = false;
+
+
+
+  // borrow(address payable user, uint amount, address tknId)
+  var txHash = null;
+  try{
+    await liquidityPool.methods.borrow(userAccount, weiAmount, tknAdd).send({from: userAccount}).on('transactionHash', function(hash){
+        txHash = hash;
+      })
+  }catch(err){
+    if( txHash != null){
+      var str = " View on Etherscan. https://ropsten.etherscan.io/tx/"+txHash;
+      alert("Transaction FAILED! "+ str);
+    }else{
+      alert("Transaction FAILED! Rejected from account");
+    }
+    return;
+  }
+
   console.log("Borrow DONE");
+  var str = " View on Etherscan. https://ropsten.etherscan.io/tx/"+txHash;
+  //alert("Transaction successfull! "+ str);
 }
 
 export async function depositCollateral(userAccount, amount, fakeID, web3, liquidityPool){
 
-  const tokenAdd = await web3.utils.toChecksumAddress(fakeID);
-  await givePermissionToContract(web3, userAccount, amount, tokenAdd);
+  const tknAdd = await web3.utils.toChecksumAddress(fakeID);
+  await givePermissionToContract(web3, userAccount, amount, tknAdd);
   console.log("TRY DEPOSIT COLLATERAL");
   const weiAmount = amount;
   await window.ethereum.enable();
-  // depositCollateral(address payable user, uint amount, address tokenId)
-  await liquidityPool.methods.depositCollateral(userAccount, weiAmount, tokenAdd).send({from: userAccount}).on('error', function(error){
-    alert("Transaction Failed: You are not allowed to have collateral in more than one token.");
-  });
+  // depositCollateral(address payable user, uint amount, address tknId)
+  var txHash = null;
+  try{
+    await liquidityPool.methods.depositCollateral(userAccount, weiAmount, tknAdd).send({from: userAccount}).on('transactionHash', function(hash){
+        txHash = hash;
+      })
+  }catch(err){
+    if( txHash != null){
+      var str = " View on Etherscan. https://ropsten.etherscan.io/tx/"+txHash;
+      alert("Transaction FAILED! "+ str);
+    }else{
+      alert("Transaction FAILED! Rejected from account");
+    }
+    return;
+  }
+
   console.log("DEPOSIT COLLATERAL DONE");
+  var str = " View on Etherscan. https://ropsten.etherscan.io/tx/"+txHash;
+  alert("Transaction successfull! "+ str);
+
 }
 
-export async function collateralFromDeposit(userAccount, amount, fakeID, web3, liquidityPool){
-
-  const tokenAdd = await web3.utils.toChecksumAddress(fakeID);
-  console.log("TRY ADD COLLATERAL FROM DEPOSIT");
-  const weiAmount = amount;
-  await window.ethereum.enable();
-  await liquidityPool.methods.switchDepositToCollateral(userAccount, weiAmount, tokenAdd).send({from: userAccount}).on('error', function(error){
-    alert("Transaction Failed: You don't have enough in deposit OR you already have collateral in a different token OR the protocol's liquidity state does not permit deposit withdrawals");
-  });
-  console.log("DEPOSIT COLLATERAL DONE");
-}
 
 //repay(address payable user, uint amount)
 export async function repay(userAccount, amount, fakeID, web3, liquidityPool){
 
-  const tokenAdd = await web3.utils.toChecksumAddress(fakeID);
-  await givePermissionToContract(web3, userAccount, amount, tokenAdd);
+  const tknAdd = await web3.utils.toChecksumAddress(fakeID);
+  await givePermissionToContract(web3, userAccount, amount, tknAdd);
   console.log("TRY REPAY");
+  console.log(fakeID);
   const weiAmount = amount;
   await window.ethereum.enable();
-  await liquidityPool.methods.repay(userAccount, weiAmount).send({from: userAccount}).on('error', function(error){
-    alert("Transaction Failed: You paied more than you owe");
-  });
+
+  var txHash = null;
+  try{
+    await liquidityPool.methods.repay(userAccount, weiAmount).send({from: userAccount}).on('transactionHash', function(hash){
+        txHash = hash;
+      })
+  }catch(err){
+    if( txHash != null){
+      var str = " View on Etherscan. https://ropsten.etherscan.io/tx/"+txHash;
+      alert("Transaction FAILED! "+ str);
+    }else{
+      alert("Transaction FAILED! Rejected from account");
+    }
+    return;
+  }
+
   console.log("REPAY DONE");
+  var str = " View on Etherscan. https://ropsten.etherscan.io/tx/"+txHash;
+  alert("Transaction successfull! "+ str);
+
 }
 
 export async function redeem(userAccount, amount, fakeID, web3, liquidityPool){
 
-  const tokenAdd = await web3.utils.toChecksumAddress(fakeID);
+  const tknAdd = await web3.utils.toChecksumAddress(fakeID);
   console.log("TRY REDEEM");
   const weiAmount = amount;
   await window.ethereum.enable();
-  const value = await liquidityPool.methods.redeem(userAccount, weiAmount).send({from: userAccount});
+  var tknDetails = await liquidityPool.methods.tknsData(tknAdd).call();
+  console.log("TOKEN OPT UR");
+  console.log(tknDetails.utilisation);
+
+  var txHash = null;
+  try{
+    await liquidityPool.methods.redeem(userAccount, weiAmount).send({from: userAccount}).on('transactionHash', function(hash){
+        txHash = hash;
+      })
+  }catch(err){
+    if( txHash != null){
+      var str = " View on Etherscan. https://ropsten.etherscan.io/tx/"+txHash;
+      alert("Transaction FAILED! "+ str);
+    }else{
+      alert("Transaction FAILED! Rejected from account");
+    }
+    return;
+  }
+
   console.log("REDEEM DONE");
+  var str = " View on Etherscan. https://ropsten.etherscan.io/tx/"+txHash;
+  alert("Transaction successfull! "+ str);
+
+
 }
 
 
 //// API data
 
-// returns [tokensList, {realID: {symbol: -, utilisationRate: -, collateral: -, baseRate: -, slope1:-, slope2:-, sread: -, price: -}]
+// returns [tknsList, {realID: {symbol: -, utilisationRate: -, collateral: -, baseRate: -, slope1:-, slope2:-, sread: -, price: -}]
 export async function getTokenAPIData(){
   const url = "https://uniswapmyapi.herokuapp.com/interestRateVars";
   let respones = await fetch(url);
   let data = await respones.json();
-  // create price dictionary and array of token ids
+  // create price dictionary and array of tkn ids
   let object = data;
   let tmprData = {};
-  let tokensList = [];
-  // for every token build dictionary entry id:[symbol, price]
-  // and array of token's ids
+  let tknsList = [];
+  // for every tkn build dictionary entry id:[symbol, price]
+  // and array of tkn's ids
   var i;
   for(i = 0; i < 226; i++){
     let id = object[i]["id"];
-    tokensList.push(id);
+    tknsList.push(id);
     let symbol = object[i]["symbol"];
     let utilisationRate = object[i]["utilisationRate"];
     let collateral = Math.round(object[i]["collateral"]);
@@ -277,11 +357,11 @@ export async function getTokenAPIData(){
     let spread = object[i]["spread"];
     tmprData[id] = {symbol: symbol, utilisationRate: utilisationRate, collateral: collateral, baseRate: baseRate, slope1: slope1, slope2: slope2, spread: spread};
   }
-  return [tokensList,tmprData];
+  return [tknsList,tmprData];
 
 }
 
-// add deployed token to the server list of LoadedTokens
+// add deployed tkn to the server list of Loadedtkns
 export async function registerLoadedToken(symbol, realID, fakeID){
   const url = "https://uniswapmyapi.herokuapp.com/loadedTokens";
   const data = {symbol: symbol, realID: realID, fakeID: fakeID};
@@ -291,15 +371,18 @@ export async function registerLoadedToken(symbol, realID, fakeID){
     body: JSON.stringify(data)
   };
   let response = await fetch(url, options);
-  console.log("This is the loadedTokens api post response");
+  console.log("This is the loadedtkns api post response");
   console.log(response);
 }
 
-// get loaded tokens from API
+// get loaded tkns from API
 export async function getLoadedTokens(){
   const url = "https://uniswapmyapi.herokuapp.com/loadedTokens";
   let respones = await fetch(url);
   let data = await respones.json();
+  if(data.loadedTokens == undefined){
+    return [];
+  }
   return data.loadedTokens;
 }
 
@@ -307,6 +390,6 @@ export async function getTokenAPIPrice(realID){
   const url = 'https://uniswapmyapi.herokuapp.com/tokenPriceUSD/' + realID;
   let respones = await fetch(url);
   let data = await respones.json();
-  // create price dictionary and array of token ids
+  // create price dictionary and array of tkn ids
   return data["priceOfToken"].toFixed(3);
 }
