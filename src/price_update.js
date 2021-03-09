@@ -26,6 +26,7 @@ class PriceUpdate extends Component {
       noLoadedTokens: 50,
       interestRates: {}, // realID -> {borrowIR, depositIR}
       showLiquidity: {},
+      reloadedBalance: false,
     };
   }
 
@@ -49,6 +50,15 @@ class PriceUpdate extends Component {
     this.setState({pricesDict: prices, isLoaded:true});
     this.props.handleChangedPrices(this.state.pricesDict);
   }*/
+
+  componentWillUpdate(){
+    console.log("COMPONENT DID UPDATE");
+    if(this.state.reloadedBalance == this.props.switchBalance){
+      console.log("Balance switch equal");
+      this.setState({reloadedBalance: !this.props.switchBalance});
+      this.registerTokensIR();
+    }
+  }
 
   async loadBlockchainData(){
     const web3 = new Web3(Web3.givenProvider || "http://localhost:8545");

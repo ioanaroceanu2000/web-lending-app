@@ -1,7 +1,7 @@
 import React, {Component} from 'react';
 import {Container, Row, Col, Form} from 'react-bootstrap';
 import './DepositView.css';
-import {deposit, redeem,borrow,depositCollateral,collateralFromDeposit, repay, getAccount} from './utils.js';
+import {deposit, redeem,borrow,depositCollateral,collateralFromDeposit, repay, getAccount, redeemCollateral} from './utils.js';
 /* global BigInt */
 
 
@@ -73,6 +73,19 @@ class ActionView extends Component {
     this.props.handleLoadingTx(false);
   }
 
+  async submitTransactionRedeemCollateral(){
+    const userAccount = await getAccount(this.props.web3);
+    const decimals = BigInt("1000000000000000");
+    const amountToTransfer = BigInt(this.state.amountToTransfer*1000) * decimals;
+    this.props.handleLoadingTx(true);
+    console.log("Started Transaction");
+    if(this.props.type == "Redeem"){
+      await redeemCollateral(userAccount, amountToTransfer, this.state.toBeAdded, this.props.web3, this.props.liquidityPool);
+    }
+    console.log("Finished Transaction");
+    this.props.handleLoadingTx(false);
+  }
+
   options(size){
     var tokenOptions = [];
     var i =0;
@@ -97,42 +110,74 @@ class ActionView extends Component {
   render() {
     const optionsLg = this.options("lg");
     const optionsSm = this.options("sm");
-    if(this.props.type == "Collateral"){
+    if(this.props.type == "Redeem"){
       return (
         <div className="container">
         <div>
         <Container>
           <Row>
-          <div><br/></div>
+          <h4>Redeem Deposit</h4>
           </Row>
-          <Row>
-          <h3>Add Collateral from wallet</h3>
-          </Row>
-          <br/>
 
           <Row>
             <Form className="inputField">
               <Form.Group controlId="formBasicEmail" className="topValueInput">
-                <Form.Control size="lg" type="email" placeholder="e.g 450" className="valueInput" onChange={ this.handleChangeAmount }/>
+                <Form.Control size="sm" type="email" placeholder="e.g 450" className="valueInput" onChange={ this.handleChangeAmount }/>
               </Form.Group>
-              {optionsLg}
+              {optionsSm}
             </Form>
           </Row>
 
           <Row>
             <Form className="inputField">
               <Form.Group controlId="formBasicEmail" className="topValueInput">
-                <Form.Control readOnly size="lg" type="email" placeholder={this.state.amountToTransferUSD} className="valueInput"/>
+                <Form.Control readOnly size="sm" type="email" placeholder={this.state.amountToTransferUSD} className="valueInput"/>
               </Form.Group>
 
             <Form.Group className="topTokenInput">
-              <Form.Control size="lg" className="tokenInput" placeholder="USD" disabled />
+              <Form.Control size="sm" className="tokenInput" placeholder="USD" disabled />
             </Form.Group>
             </Form>
           </Row>
 
           <Row>
-            <button type="button" className="submitButton" onClick={this.submitTransaction.bind(this)}>Submit Transaction</button>
+            <button type="button" className="collateral-submit" onClick={this.submitTransaction.bind(this)}>Submit Transaction</button>
+          </Row>
+
+        </Container>
+        </div>
+
+        <br/>
+
+        <div>
+        <Container>
+          <Row>
+          <h4>Redeem Collateral</h4>
+          </Row>
+
+          <Row>
+            <Form className="inputField">
+              <Form.Group controlId="formBasicEmail" className="topValueInput">
+                <Form.Control size="sm" type="email" placeholder="e.g 450" className="valueInput" onChange={ this.handleChangeAmount }/>
+              </Form.Group>
+              {optionsSm}
+            </Form>
+          </Row>
+
+          <Row>
+            <Form className="inputField">
+              <Form.Group controlId="formBasicEmail" className="topValueInput">
+                <Form.Control readOnly size="sm" type="email" placeholder={this.state.amountToTransferUSD} className="valueInput"/>
+              </Form.Group>
+
+            <Form.Group className="topTokenInput">
+              <Form.Control size="sm" className="tokenInput" placeholder="USD" disabled />
+            </Form.Group>
+            </Form>
+          </Row>
+
+          <Row>
+            <button type="button" className="collateral-submit" onClick={this.submitTransactionRedeemCollateral.bind(this)}>Submit Transaction</button>
           </Row>
 
         </Container>

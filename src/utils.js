@@ -1,6 +1,6 @@
 import Web3 from 'web3';
 import {Transaction} from 'ethereumjs-tx';
-import {IRVAR_ABI, IRVAR_ADD, LiquidityPool_ABI, LiquidityPool_ADD, Exchange_ADD, Exchange_ABI, ERC20_ABI, Token_ABI, Token_BYTECODE } from './abis/abi';
+import {IRVAR_ABI, IRVAR_ADD, LiquidityPool_ABI, LiquidityPool_ADD, Exchange_ADD, Exchange_ABI, ERC20_ABI, Token_ABI, Token_BYTECODE, LiquidityManager_ABI, LiquidityManager_ADD } from './abis/abi';
 import fs from 'fs';
 /* global BigInt */
 
@@ -172,7 +172,35 @@ export async function updateLiquidityPoolPrices(web3, liquidityPool, tkn, accoun
   await liquidityPool.methods.updatetknPrice(tkn).send({from: account});
 }
 
+export async function switchToUnexchangable(tkn){
+  const web3 = await loadWeb3();
+  const exchange = new web3.eth.Contract(Exchange_ABI, Exchange_ADD);
+  const account = await web3.utils.toChecksumAddress('0x614114ec0a5a6def6172d8cb210facb63d459c04');
+  const privateKey = new Buffer('8ba9b5140d9b73afbdbb177247abe308242eaa55a955a52f7ebf2c2ca8aae99a', 'hex');
+  var nonce = await web3.eth.getTransactionCount(account);
+  const gasLimit = await web3.utils.toHex(2000000);
+  const data = await exchange.methods.switchToUnexchangable(tkn).encodeABI();
+  const gasPrice = await web3.utils.toWei('100', 'gwei');
+  const gasPriceHex = await web3.utils.toHex(gasPrice);
+  const rawTx = {
+    nonce: nonce,
+    from: account,
+    to: Exchange_ADD,
+    gasLimit: gasLimit,
+    gasPrice: gasPriceHex,
+    chainId: 3,
+    data: data
+  };
+  // private key of the second account
+  var tx = new Transaction(rawTx, {'chain':'ropsten'});
+  tx.sign(privateKey);
+  var serializedTx = tx.serialize();
+  console.log("Send signed transaction: exchangeability");
+  const receipt = await web3.eth.sendSignedTransaction('0x' + serializedTx.toString('hex'));
 
+  var token =  await exchange.methods.tokensData(tkn).call();
+  console.log("Is token exchangeable? " + token.exchangeable);
+}
 
 //// PROTOCOL FUNCTIONALITIES
 
@@ -213,7 +241,9 @@ export async function borrow(userAccount, amount, fakeID, web3, liquidityPool){
   const weiAmount = amount;
   await window.ethereum.enable();
   web3.eth.handleRevert = false;
-
+  var price = await liquidityPool.methods.tknsData(tknAdd).call();
+  console.log("Price");
+  console.log(price.price);
 
 
   // borrow(address payable user, uint amount, address tknId)
@@ -330,6 +360,90 @@ export async function redeem(userAccount, amount, fakeID, web3, liquidityPool){
 
 }
 
+export async function redeemCollateral(userAccount, amount, fakeID, web3, liquidityPool){
+
+  const tknAdd = await web3.utils.toChecksumAddress(fakeID);
+  console.log("TRY REDEEM");
+  const weiAmount = amount;
+  await window.ethereum.enable();
+  var tknDetails = await liquidityPool.methods.tknsData(tknAdd).call();
+  var txHash = null;
+  try{
+    await liquidityPool.methods.redeemCollateral(userAccount, weiAmount).send({from: userAccount}).on('transactionHash', function(hash){
+        txHash = hash;
+      })
+  }catch(err){
+    if( txHash != null){
+      var str = " View on Etherscan. https://ropsten.etherscan.io/tx/"+txHash;
+      alert("Transaction FAILED! "+ str);
+    }else{
+      alert("Transaction FAILED! Rejected from account");
+    }
+    return;
+  }
+
+  console.log("REDEEM COLLATERAL DONE");
+  var str = " View on Etherscan. https://ropsten.etherscan.io/tx/"+txHash;
+  alert("Transaction successfull! "+ str);
+
+
+}
+
+export async function liquidate(userToLiquidate, userAccount, web3, liquidityPool, tokenBorrowed, amoutBorrowed){
+
+  console.log("TRY Liquidate");
+  const tknAdd = await web3.utils.toChecksumAddress(tokenBorrowed);
+  await givePermissionToContract(web3, userAccount, amoutBorrowed+amoutBorrowed, tknAdd);
+  await window.ethereum.enable();
+  var txHash = null;
+  try{
+    await liquidityPool.methods.liquidate(userToLiquidate).send({from: userAccount}).on('transactionHash', function(hash){
+        txHash = hash;
+      })
+  }catch(err){
+    if( txHash != null){
+      var str = " View on Etherscan. https://ropsten.etherscan.io/tx/"+txHash;
+      alert("Transaction FAILED! "+ str);
+    }else{
+      alert("Transaction FAILED! Rejected from account");
+    }
+    return;
+  }
+
+  console.log("Liquidation done");
+  var str = " View on Etherscan. https://ropsten.etherscan.io/tx/"+txHash;
+  alert("Transaction successfull! "+ str);
+
+
+}
+
+//exchange(address tokenGet, uint amountGet, address tokenGive, address user)
+// exchange(this.state.userAddress, this.state.tokenGive, this.state.amountGive, this.state.tokenGet, this.state.web3, this.state.liquidityPool);
+export async function exchange(userAccount, tokenGive, amountGive, tokenGet, web3, liquidityPool){
+  const lminstance = new web3.eth.Contract(LiquidityManager_ABI, LiquidityManager_ADD);
+  const decimals = BigInt("1000000000000000");
+  const amountToTransfer = BigInt(amountGive*1000) * decimals;
+  console.log("TRY Exchange");
+  await window.ethereum.enable();
+  var txHash = null;
+  try{
+    await lminstance.methods.exchange(tokenGive, amountToTransfer, tokenGet, userAccount).send({from: userAccount}).on('transactionHash', function(hash){
+        txHash = hash;
+    })
+  }catch(err){
+    if( txHash != null){
+      var str = " View on Etherscan. https://ropsten.etherscan.io/tx/"+txHash;
+      alert("Transaction FAILED! "+ str);
+    }else{
+      alert("Transaction FAILED! Rejected from account");
+    }
+    return;
+  }
+
+  console.log("Exchange done");
+  var str = " View on Etherscan. https://ropsten.etherscan.io/tx/"+txHash;
+  alert("Transaction successfull! "+ str);
+}
 
 //// API data
 

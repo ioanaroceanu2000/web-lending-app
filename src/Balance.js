@@ -73,7 +73,6 @@ class Balance extends Component {
       let deposit = '';
       let depositToken = 'NO DEPOSIT';
       let depositDollars = 0;
-      console.log(this.state.depositedToken)
       if(this.state.depositedToken != ''){
         deposit = this.state.userDeposit;
         var fakeID = this.state.depositedToken;
@@ -94,7 +93,6 @@ class Balance extends Component {
         if(this.props.tokens[fakeID] == null){
           fakeID = fakeID.toLowerCase();
         }
-        console.log(fakeID);
         collToken = this.props.tokens[fakeID].symbol;
         let realID = this.props.tokens[fakeID].realID;
         collDollars = Number(collateral)*this.props.tokens[fakeID].price;

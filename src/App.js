@@ -7,6 +7,7 @@ import {Container, Row, Col, Navbar, Button, Form} from 'react-bootstrap';
 import logo from './logoTr.png';
 import warwicklogo from './warwicklogo.png';
 import ActionButtons from './ActionButtons.js';
+import Liquidation from './Liquidation.js';
 import {getLoadedTokens, registerLoadedToken, getTokenAPIData, deployToken, getTokenAPIPrice, getAccount, createToken, addLoadedTokens, updateExchangePricesFromOwner, updateLiquidityPoolPrices} from './utils.js';
 import {LiquidityPool_ABI, LiquidityPool_ADD, Exchange_ADD, Exchange_ABI, ERC20_ABI, Token_ABI, Token_BYTECODE } from './abis/abi';
 import {getTokenAPIPrices} from './priceUpdate.js';
@@ -15,6 +16,7 @@ class App extends Component {
 
   constructor(props) {
     super(props);
+
     this.state = {
       loading: true,
       prices: {}, //this is a dictionary realID -> [symbol,price]
@@ -81,9 +83,6 @@ class App extends Component {
       let tokenDetails = {};
       const tokenData = this.state.allTokenData[this.state.toBeAdded];
       tokenDetails.symbol = tokenData.symbol;
-      console.log("UR");
-      console.log(tokenData.utilisationRate);
-      console.log(Math.round(tokenData.utilisationRate));
       tokenDetails.utilisation = Math.round(tokenData.utilisationRate);
       tokenDetails.collateral = Math.round(tokenData.collateral);
       tokenDetails.baseRate = tokenData.baseRate;
@@ -237,9 +236,13 @@ class App extends Component {
             </Col>
           </Row>
 
-          <PriceUpdate loadedTokens={this.state.addedTokenIDs} prices={this.state.prices} realToFakeID={this.state.realToFakeID}/>
+          <PriceUpdate loadedTokens={this.state.addedTokenIDs} prices={this.state.prices} realToFakeID={this.state.realToFakeID} switchBalance={this.checkbalanceSwitch()}/>
 
           {this.displayAddTokenOption()}
+
+          <br/><br/>
+
+          <Liquidation tokens={listForAction} prices={pricesForAction}/>
 
         </Container>
 
